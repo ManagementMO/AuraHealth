@@ -1,5 +1,4 @@
 {
-  "/api/hume/token/route": "app/api/hume/token/route.js",
   "/check-in/page": "app/check-in/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js"

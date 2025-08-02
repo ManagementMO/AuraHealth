@@ -231,14 +231,7 @@ function PatientCheckin({}) {
         webcamError: null,
         emotionData: [],
         humeWebSocket: null,
-        eviWebSocket: null,
-        humeToken: null,
-        isConnecting: false,
-        conversationTranscript: [],
-        connectionStatus: {
-            facial: 'disconnected',
-            vocal: 'disconnected'
-        }
+        eviWebSocket: null
     });
     const webcamRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const timerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
@@ -289,348 +282,6 @@ function PatientCheckin({}) {
         };
         requestWebcamAccess();
     }, []);
-    // Fetch Hume AI access token
-    const fetchHumeToken = async ()=>{
-        try {
-            const response = await fetch('/api/hume/token');
-            if (!response.ok) {
-                const errorData = await response.json().catch(()=>({}));
-                if (response.status === 500 && errorData.error === 'Server configuration error') {
-                    console.warn('Hume AI credentials not configured - running in demo mode');
-                    __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].info('Demo Mode', {
-                        description: 'Emotion analysis is not configured. Recording will work without AI analysis.',
-                        duration: 5000
-                    });
-                    return 'demo-mode';
-                }
-                throw new Error(`Token fetch failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
-            }
-            const data = await response.json();
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            if (!data.accessToken) {
-                throw new Error('No access token received');
-            }
-            return data.accessToken;
-        } catch (error) {
-            console.error('Error fetching Hume token:', error);
-            __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].error('Authentication failed', {
-                description: 'Unable to connect to emotion analysis service. Recording will work without AI analysis.',
-                duration: 5000
-            });
-            return null;
-        }
-    };
-    // Initialize Hume AI WebSocket connections
-    const initializeHumeConnections = async ()=>{
-        if (checkinState.isConnecting || checkinState.humeToken) {
-            return;
-        }
-        setCheckinState((prev)=>({
-                ...prev,
-                isConnecting: true,
-                connectionStatus: {
-                    facial: 'connecting',
-                    vocal: 'connecting'
-                }
-            }));
-        try {
-            // Fetch secure access token
-            const token = await fetchHumeToken();
-            if (!token) {
-                setCheckinState((prev)=>({
-                        ...prev,
-                        isConnecting: false
-                    }));
-                return;
-            }
-            setCheckinState((prev)=>({
-                    ...prev,
-                    humeToken: token
-                }));
-            // If in demo mode, skip WebSocket connections
-            if (token === 'demo-mode') {
-                console.log('Running in demo mode - skipping Hume AI WebSocket connections');
-                setCheckinState((prev)=>({
-                        ...prev,
-                        isConnecting: false,
-                        humeWebSocket: null,
-                        eviWebSocket: null,
-                        connectionStatus: {
-                            facial: 'disconnected',
-                            vocal: 'disconnected'
-                        }
-                    }));
-                return;
-            }
-            // Initialize Expression Measurement API WebSocket for facial analysis
-            const expressionWs = new WebSocket(`wss://api.hume.ai/v0/stream/models`);
-            expressionWs.onopen = ()=>{
-                console.log('Expression Measurement WebSocket connected');
-                setCheckinState((prev)=>({
-                        ...prev,
-                        connectionStatus: {
-                            ...prev.connectionStatus,
-                            facial: 'connected'
-                        }
-                    }));
-                // Send authentication and configuration
-                const authMessage = {
-                    models: {
-                        face: {}
-                    },
-                    stream_window_ms: 1000,
-                    reset_stream: true
-                };
-                expressionWs.send(JSON.stringify(authMessage));
-            };
-            expressionWs.onmessage = (event)=>{
-                try {
-                    const data = JSON.parse(event.data);
-                    // Handle facial expression predictions
-                    if (data.face && data.face.predictions && data.face.predictions.length > 0) {
-                        const prediction = data.face.predictions[0];
-                        if (prediction.emotions && prediction.emotions.length > 0) {
-                            // Convert Hume emotion array to our emotion object format
-                            const emotions = {
-                                joy: 0,
-                                sadness: 0,
-                                anger: 0,
-                                fear: 0,
-                                surprise: 0,
-                                disgust: 0,
-                                contempt: 0
-                            };
-                            // Map Hume emotions to our format
-                            prediction.emotions.forEach((emotion)=>{
-                                const emotionName = emotion.name.toLowerCase();
-                                if (emotionName in emotions) {
-                                    emotions[emotionName] = emotion.score;
-                                }
-                            });
-                            const emotionPoint = {
-                                timestamp: Date.now(),
-                                emotions,
-                                confidence: prediction.prob || 0.5,
-                                source: 'facial'
-                            };
-                            setCheckinState((prev)=>({
-                                    ...prev,
-                                    emotionData: [
-                                        ...prev.emotionData,
-                                        emotionPoint
-                                    ]
-                                }));
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error processing facial emotion data:', error);
-                }
-            };
-            expressionWs.onerror = (error)=>{
-                console.error('Expression Measurement WebSocket error:', error);
-                setCheckinState((prev)=>({
-                        ...prev,
-                        connectionStatus: {
-                            ...prev.connectionStatus,
-                            facial: 'error'
-                        }
-                    }));
-                __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].error('Facial analysis connection failed', {
-                    description: 'Unable to connect to facial emotion analysis.',
-                    duration: 5000
-                });
-            };
-            expressionWs.onclose = ()=>{
-                console.log('Expression Measurement WebSocket closed');
-                setCheckinState((prev)=>({
-                        ...prev,
-                        connectionStatus: {
-                            ...prev.connectionStatus,
-                            facial: 'disconnected'
-                        }
-                    }));
-            };
-            // Initialize EVI API WebSocket for vocal analysis and intelligent conversation
-            const eviWs = new WebSocket(`wss://api.hume.ai/v0/evi/chat`, [], {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'X-Hume-Api-Key': token
-                }
-            });
-            eviWs.onopen = ()=>{
-                console.log('EVI WebSocket connected');
-                setCheckinState((prev)=>({
-                        ...prev,
-                        connectionStatus: {
-                            ...prev.connectionStatus,
-                            vocal: 'connected'
-                        }
-                    }));
-                // Configure EVI session for healthcare conversation
-                const sessionConfig = {
-                    type: 'session_settings',
-                    session_settings: {
-                        type: 'session_settings',
-                        system_prompt: "You are a compassionate healthcare assistant helping patients prepare for their appointment. Your role is to listen empathetically as they describe how they've been feeling and gently encourage them to share their health concerns. Keep responses brief and supportive. Ask follow-up questions to help them articulate their feelings and symptoms clearly. This is a rehearsal conversation to help them prepare for their actual doctor visit.",
-                        voice: {
-                            provider: "HUME_AI",
-                            name: "ITO"
-                        },
-                        language: "en",
-                        max_duration: 60000,
-                        inactivity_timeout: 10000 // 10 seconds of silence
-                    }
-                };
-                eviWs.send(JSON.stringify(sessionConfig));
-            };
-            eviWs.onmessage = (event)=>{
-                try {
-                    const data = JSON.parse(event.data);
-                    // Handle different EVI message types
-                    switch(data.type){
-                        case 'user_message':
-                            // Add user message to conversation transcript
-                            if (data.message && data.message.content) {
-                                setCheckinState((prev)=>({
-                                        ...prev,
-                                        conversationTranscript: [
-                                            ...prev.conversationTranscript,
-                                            `User: ${data.message.content}`
-                                        ]
-                                    }));
-                            }
-                            // Process vocal prosody data from user speech
-                            if (data.models && data.models.prosody && data.models.prosody.scores) {
-                                const prosodyScores = data.models.prosody.scores;
-                                // Convert prosody scores to our emotion format
-                                const emotions = {
-                                    joy: 0,
-                                    sadness: 0,
-                                    anger: 0,
-                                    fear: 0,
-                                    surprise: 0,
-                                    disgust: 0,
-                                    contempt: 0
-                                };
-                                // Map prosody emotions to our format
-                                Object.keys(prosodyScores).forEach((emotionName)=>{
-                                    const normalizedName = emotionName.toLowerCase();
-                                    if (normalizedName in emotions) {
-                                        emotions[normalizedName] = prosodyScores[emotionName];
-                                    }
-                                });
-                                const emotionPoint = {
-                                    timestamp: Date.now(),
-                                    emotions,
-                                    confidence: data.models.prosody.confidence || 0.7,
-                                    source: 'vocal'
-                                };
-                                setCheckinState((prev)=>({
-                                        ...prev,
-                                        emotionData: [
-                                            ...prev.emotionData,
-                                            emotionPoint
-                                        ]
-                                    }));
-                            }
-                            break;
-                        case 'assistant_message':
-                            // Add assistant message to conversation transcript
-                            if (data.message && data.message.content) {
-                                setCheckinState((prev)=>({
-                                        ...prev,
-                                        conversationTranscript: [
-                                            ...prev.conversationTranscript,
-                                            `Assistant: ${data.message.content}`
-                                        ]
-                                    }));
-                            }
-                            console.log('EVI Assistant response:', data.message?.content);
-                            break;
-                        case 'audio_output':
-                            // Handle audio responses from EVI (AI speaking back)
-                            if (data.data) {
-                                // Play audio response from EVI
-                                const audioBlob = new Blob([
-                                    Uint8Array.from(atob(data.data), (c)=>c.charCodeAt(0))
-                                ], {
-                                    type: 'audio/wav'
-                                });
-                                const audioUrl = URL.createObjectURL(audioBlob);
-                                const audio = new Audio(audioUrl);
-                                audio.play().catch((error)=>{
-                                    console.error('Error playing EVI audio response:', error);
-                                });
-                            }
-                            break;
-                        case 'session_status':
-                            console.log('EVI Session status:', data.status);
-                            break;
-                        default:
-                            console.log('Unknown EVI message type:', data.type);
-                    }
-                } catch (error) {
-                    console.error('Error processing EVI message:', error);
-                }
-            };
-            eviWs.onerror = (error)=>{
-                console.error('EVI WebSocket error:', error);
-                setCheckinState((prev)=>({
-                        ...prev,
-                        connectionStatus: {
-                            ...prev.connectionStatus,
-                            vocal: 'error'
-                        }
-                    }));
-                __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].error('Voice analysis connection failed', {
-                    description: 'Unable to connect to voice emotion analysis and conversation.',
-                    duration: 5000
-                });
-            };
-            eviWs.onclose = ()=>{
-                console.log('EVI WebSocket closed');
-                setCheckinState((prev)=>({
-                        ...prev,
-                        connectionStatus: {
-                            ...prev.connectionStatus,
-                            vocal: 'disconnected'
-                        }
-                    }));
-            };
-            // Store WebSocket connections in state
-            setCheckinState((prev)=>({
-                    ...prev,
-                    humeWebSocket: expressionWs,
-                    eviWebSocket: eviWs,
-                    isConnecting: false
-                }));
-        } catch (error) {
-            console.error('Error initializing Hume connections:', error);
-            setCheckinState((prev)=>({
-                    ...prev,
-                    isConnecting: false
-                }));
-            __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].error('Connection failed', {
-                description: 'Unable to initialize emotion analysis services.',
-                duration: 5000
-            });
-        }
-    };
-    // Initialize Hume connections when component mounts
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        initializeHumeConnections();
-        // Cleanup WebSocket connections on unmount
-        return ()=>{
-            if (checkinState.humeWebSocket) {
-                checkinState.humeWebSocket.close();
-            }
-            if (checkinState.eviWebSocket) {
-                checkinState.eviWebSocket.close();
-            }
-        };
-    }, []);
     // Handle webcam ready state
     const handleWebcamReady = ()=>{
         setCheckinState((prev)=>({
@@ -666,224 +317,16 @@ function PatientCheckin({}) {
         });
     };
     // Start recording function
-    const startRecording = async ()=>{
+    const startRecording = ()=>{
         if (checkinState.phase !== 'idle' || !checkinState.webcamReady) {
             return;
         }
-        // Check if we have a token (either real or demo mode)
-        if (!checkinState.humeToken) {
-            __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].error('Connection not ready', {
-                description: 'Please wait for services to initialize.',
-                duration: 3000
-            });
-            return;
-        }
-        const isDemoMode = checkinState.humeToken === 'demo-mode';
         // Set recording phase and reset timer
         setCheckinState((prev)=>({
                 ...prev,
                 phase: 'recording',
-                timeRemaining: 60,
-                emotionData: []
+                timeRemaining: 60
             }));
-        // Start streaming video frames to Expression Measurement API (if not in demo mode)
-        let videoStreamInterval = null;
-        if (!isDemoMode) {
-            const streamVideoFrames = ()=>{
-                if (webcamRef.current && checkinState.humeWebSocket && checkinState.phase === 'recording') {
-                    const canvas = document.createElement('canvas');
-                    const video = webcamRef.current.video;
-                    if (video && video.videoWidth > 0 && video.videoHeight > 0) {
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            ctx.drawImage(video, 0, 0);
-                            // Convert canvas to base64 image (JPEG format for better performance)
-                            const imageData = canvas.toDataURL('image/jpeg', 0.7);
-                            const base64Data = imageData.split(',')[1];
-                            // Send frame to Expression Measurement API with proper format
-                            if (checkinState.humeWebSocket.readyState === WebSocket.OPEN) {
-                                const message = {
-                                    data: base64Data,
-                                    models: {
-                                        face: {}
-                                    },
-                                    stream_window_ms: 1000,
-                                    reset_stream: false
-                                };
-                                checkinState.humeWebSocket.send(JSON.stringify(message));
-                            }
-                        }
-                    }
-                }
-            };
-            // Start video frame streaming (every 300ms for optimal performance vs accuracy balance)
-            videoStreamInterval = setInterval(streamVideoFrames, 300);
-        } else {
-            // In demo mode, generate mock emotion data
-            videoStreamInterval = setInterval(()=>{
-                if (checkinState.phase === 'recording') {
-                    const mockEmotionPoint = {
-                        timestamp: Date.now(),
-                        emotions: {
-                            joy: Math.random() * 0.3 + 0.1,
-                            sadness: Math.random() * 0.2,
-                            anger: Math.random() * 0.1,
-                            fear: Math.random() * 0.15,
-                            surprise: Math.random() * 0.2,
-                            disgust: Math.random() * 0.1,
-                            contempt: Math.random() * 0.05
-                        },
-                        confidence: Math.random() * 0.3 + 0.7,
-                        source: 'facial'
-                    };
-                    setCheckinState((prev)=>({
-                            ...prev,
-                            emotionData: [
-                                ...prev.emotionData,
-                                mockEmotionPoint
-                            ]
-                        }));
-                }
-            }, 500);
-        }
-        // Start audio capture for EVI (if not in demo mode)
-        if (!isDemoMode) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        sampleRate: 16000,
-                        channelCount: 1,
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    },
-                    video: false
-                });
-                // Set up audio processing for EVI WebSocket with proper format
-                const audioContext = new AudioContext({
-                    sampleRate: 16000
-                });
-                const source = audioContext.createMediaStreamSource(stream);
-                // Use AudioWorklet for better performance if available, fallback to ScriptProcessor
-                let processor;
-                let isProcessing = false;
-                if (audioContext.audioWorklet) {
-                    // Modern approach with AudioWorklet (better performance)
-                    try {
-                        await audioContext.audioWorklet.addModule('/audio-processor.js');
-                        processor = new AudioWorkletNode(audioContext, 'audio-processor');
-                        processor.port.onmessage = (event)=>{
-                            if (checkinState.eviWebSocket && checkinState.eviWebSocket.readyState === WebSocket.OPEN && checkinState.phase === 'recording' && !isProcessing) {
-                                isProcessing = true;
-                                // Convert Float32Array to base64 encoded PCM data
-                                const audioData = event.data;
-                                const int16Array = new Int16Array(audioData.length);
-                                for(let i = 0; i < audioData.length; i++){
-                                    int16Array[i] = Math.max(-32768, Math.min(32767, audioData[i] * 32768));
-                                }
-                                const base64Audio = btoa(String.fromCharCode(...new Uint8Array(int16Array.buffer)));
-                                const message = {
-                                    type: 'audio_input',
-                                    data: base64Audio,
-                                    encoding: 'linear16',
-                                    sample_rate: 16000
-                                };
-                                checkinState.eviWebSocket.send(JSON.stringify(message));
-                                setTimeout(()=>{
-                                    isProcessing = false;
-                                }, 50); // Throttle to ~20fps
-                            }
-                        };
-                    } catch (workletError) {
-                        console.warn('AudioWorklet not available, falling back to ScriptProcessor');
-                        // Fallback to ScriptProcessor
-                        processor = audioContext.createScriptProcessor(4096, 1, 1);
-                    }
-                } else {
-                    // Fallback to ScriptProcessor for older browsers
-                    processor = audioContext.createScriptProcessor(4096, 1, 1);
-                }
-                // ScriptProcessor fallback implementation
-                if (processor instanceof ScriptProcessorNode) {
-                    processor.onaudioprocess = (event)=>{
-                        if (checkinState.eviWebSocket && checkinState.eviWebSocket.readyState === WebSocket.OPEN && checkinState.phase === 'recording' && !isProcessing) {
-                            isProcessing = true;
-                            const inputBuffer = event.inputBuffer.getChannelData(0);
-                            // Convert to 16-bit PCM and then to base64
-                            const int16Array = new Int16Array(inputBuffer.length);
-                            for(let i = 0; i < inputBuffer.length; i++){
-                                int16Array[i] = Math.max(-32768, Math.min(32767, inputBuffer[i] * 32768));
-                            }
-                            const base64Audio = btoa(String.fromCharCode(...new Uint8Array(int16Array.buffer)));
-                            const message = {
-                                type: 'audio_input',
-                                data: base64Audio,
-                                encoding: 'linear16',
-                                sample_rate: 16000
-                            };
-                            checkinState.eviWebSocket.send(JSON.stringify(message));
-                            setTimeout(()=>{
-                                isProcessing = false;
-                            }, 50); // Throttle to ~20fps
-                        }
-                    };
-                }
-                source.connect(processor);
-                if (processor instanceof ScriptProcessorNode) {
-                    processor.connect(audioContext.destination);
-                }
-                // Store cleanup functions
-                const cleanup = ()=>{
-                    if (videoStreamInterval) clearInterval(videoStreamInterval);
-                    processor.disconnect();
-                    source.disconnect();
-                    stream.getTracks().forEach((track)=>track.stop());
-                    audioContext.close();
-                };
-                // Store cleanup function for later use
-                window.humeCleanup = cleanup;
-            } catch (error) {
-                console.error('Error setting up audio capture:', error);
-                __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].error('Audio setup failed', {
-                    description: 'Unable to capture audio for voice analysis and conversation.',
-                    duration: 3000
-                });
-            }
-        } else {
-            // In demo mode, generate mock vocal emotion data
-            const vocalDataInterval = setInterval(()=>{
-                if (checkinState.phase === 'recording') {
-                    const mockVocalPoint = {
-                        timestamp: Date.now(),
-                        emotions: {
-                            joy: Math.random() * 0.4 + 0.2,
-                            sadness: Math.random() * 0.3,
-                            anger: Math.random() * 0.15,
-                            fear: Math.random() * 0.2,
-                            surprise: Math.random() * 0.25,
-                            disgust: Math.random() * 0.1,
-                            contempt: Math.random() * 0.05
-                        },
-                        confidence: Math.random() * 0.2 + 0.8,
-                        source: 'vocal'
-                    };
-                    setCheckinState((prev)=>({
-                            ...prev,
-                            emotionData: [
-                                ...prev.emotionData,
-                                mockVocalPoint
-                            ]
-                        }));
-                }
-            }, 800);
-            // Store cleanup function for demo mode
-            window.humeCleanup = ()=>{
-                if (videoStreamInterval) clearInterval(videoStreamInterval);
-                clearInterval(vocalDataInterval);
-            };
-        }
         // Start countdown timer
         timerRef.current = setInterval(()=>{
             setCheckinState((prev)=>{
@@ -907,53 +350,12 @@ function PatientCheckin({}) {
             duration: 3000
         });
     };
-    // Submit emotion data to backend
-    const submitEmotionData = async (emotionData, transcript)=>{
-        try {
-            const response = await fetch('/api/checkin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    patientId: `patient_${Date.now()}`,
-                    transcript: transcript.join('\n'),
-                    emotionTimeline: emotionData,
-                    createdAt: new Date()
-                })
-            });
-            if (!response.ok) {
-                throw new Error(`Failed to submit data: ${response.status}`);
-            }
-            const result = await response.json();
-            console.log('Emotion data submitted successfully:', result);
-            __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].success('Data saved', {
-                description: 'Your check-in data has been securely stored.',
-                duration: 3000
-            });
-        } catch (error) {
-            console.error('Error submitting emotion data:', error);
-            __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["toast"].error('Save failed', {
-                description: 'Unable to save your check-in data. Please try again.',
-                duration: 5000
-            });
-        }
-    };
     // Stop recording function
-    const stopRecording = async ()=>{
+    const stopRecording = ()=>{
         // Clear timer
         if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
-        }
-        // Clean up audio processing
-        if (window.humeCleanup) {
-            window.humeCleanup();
-            delete window.humeCleanup;
-        }
-        // Submit collected emotion data and conversation transcript to backend
-        if (checkinState.emotionData.length > 0 || checkinState.conversationTranscript.length > 0) {
-            await submitEmotionData(checkinState.emotionData, checkinState.conversationTranscript);
         }
         // Set finished phase
         setCheckinState((prev)=>({
@@ -966,29 +368,14 @@ function PatientCheckin({}) {
             duration: 3000
         });
     };
-    // Cleanup timer and WebSocket connections on unmount
+    // Cleanup timer on unmount
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         return ()=>{
             if (timerRef.current) {
                 clearInterval(timerRef.current);
             }
-            // Clean up audio processing
-            if (window.humeCleanup) {
-                window.humeCleanup();
-                delete window.humeCleanup;
-            }
-            // Close WebSocket connections
-            if (checkinState.humeWebSocket) {
-                checkinState.humeWebSocket.close();
-            }
-            if (checkinState.eviWebSocket) {
-                checkinState.eviWebSocket.close();
-            }
         };
-    }, [
-        checkinState.humeWebSocket,
-        checkinState.eviWebSocket
-    ]);
+    }, []);
     // Render component based on current phase
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
         children: [
@@ -998,12 +385,12 @@ function PatientCheckin({}) {
                     children: "Patient Check-in"
                 }, void 0, false, {
                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                    lineNumber: 923,
+                    lineNumber: 227,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                lineNumber: 922,
+                lineNumber: 226,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1021,7 +408,7 @@ function PatientCheckin({}) {
                                             children: "To prepare for your appointment, please take 60 seconds to describe how you've been feeling."
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                            lineNumber: 933,
+                                            lineNumber: 237,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1029,18 +416,18 @@ function PatientCheckin({}) {
                                             children: "This helps your healthcare provider better understand your current state and provide more personalized care."
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                            lineNumber: 936,
+                                            lineNumber: 240,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                    lineNumber: 932,
+                                    lineNumber: 236,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 931,
+                                lineNumber: 235,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1055,7 +442,7 @@ function PatientCheckin({}) {
                                                 children: checkinState.webcamError
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 947,
+                                                lineNumber: 251,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1067,7 +454,7 @@ function PatientCheckin({}) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 950,
+                                                lineNumber: 254,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -1077,13 +464,13 @@ function PatientCheckin({}) {
                                                 children: "Refresh Page"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 962,
+                                                lineNumber: 266,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 946,
+                                        lineNumber: 250,
                                         columnNumber: 17
                                     }, this) : checkinState.webcamReady ? // Webcam Feed
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1106,12 +493,12 @@ function PatientCheckin({}) {
                                                     className: "w-full h-auto"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 974,
+                                                    lineNumber: 278,
                                                     columnNumber: 21
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 973,
+                                                lineNumber: 277,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1121,18 +508,18 @@ function PatientCheckin({}) {
                                                     children: "Camera is ready. You can see yourself in the preview above."
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 990,
+                                                    lineNumber: 294,
                                                     columnNumber: 21
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 989,
+                                                lineNumber: 293,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 972,
+                                        lineNumber: 276,
                                         columnNumber: 17
                                     }, this) : // Loading State
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1144,7 +531,7 @@ function PatientCheckin({}) {
                                                     className: "bg-neutral-300 rounded-lg h-48 mb-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 999,
+                                                    lineNumber: 303,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1152,198 +539,35 @@ function PatientCheckin({}) {
                                                     children: "Requesting camera access..."
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1000,
+                                                    lineNumber: 304,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                            lineNumber: 998,
+                                            lineNumber: 302,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 997,
-                                        columnNumber: 17
-                                    }, this),
-                                    checkinState.webcamReady && !checkinState.webcamError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "text-center space-y-3",
-                                        children: [
-                                            checkinState.isConnecting && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "text-neutral-600 text-sm",
-                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "animate-pulse",
-                                                    children: "Connecting to emotion analysis services..."
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1012,
-                                                    columnNumber: 23
-                                                }, this)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 1011,
-                                                columnNumber: 21
-                                            }, this),
-                                            !checkinState.isConnecting && checkinState.humeToken && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "space-y-2",
-                                                children: checkinState.humeToken === 'demo-mode' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "text-blue-600 text-sm flex items-center justify-center space-x-2",
-                                                    children: [
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            className: "w-2 h-2 bg-blue-500 rounded-full"
-                                                        }, void 0, false, {
-                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                            lineNumber: 1020,
-                                                            columnNumber: 27
-                                                        }, this),
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            children: "Demo mode ready (mock emotion data)"
-                                                        }, void 0, false, {
-                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                            lineNumber: 1021,
-                                                            columnNumber: 27
-                                                        }, this)
-                                                    ]
-                                                }, void 0, true, {
-                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1019,
-                                                    columnNumber: 25
-                                                }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "space-y-1",
-                                                    children: [
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            className: "text-green-600 text-sm flex items-center justify-center space-x-2",
-                                                            children: [
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    className: "w-2 h-2 bg-green-500 rounded-full"
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                    lineNumber: 1026,
-                                                                    columnNumber: 29
-                                                                }, this),
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                    children: "Emotion analysis ready"
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                    lineNumber: 1027,
-                                                                    columnNumber: 29
-                                                                }, this)
-                                                            ]
-                                                        }, void 0, true, {
-                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                            lineNumber: 1025,
-                                                            columnNumber: 27
-                                                        }, this),
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            className: "flex justify-center space-x-4 text-xs",
-                                                            children: [
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    className: `flex items-center space-x-1 ${checkinState.connectionStatus.facial === 'connected' ? 'text-green-600' : checkinState.connectionStatus.facial === 'error' ? 'text-red-600' : checkinState.connectionStatus.facial === 'connecting' ? 'text-yellow-600' : 'text-gray-500'}`,
-                                                                    children: [
-                                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            className: `w-1.5 h-1.5 rounded-full ${checkinState.connectionStatus.facial === 'connected' ? 'bg-green-500' : checkinState.connectionStatus.facial === 'error' ? 'bg-red-500' : checkinState.connectionStatus.facial === 'connecting' ? 'bg-yellow-500' : 'bg-gray-400'}`
-                                                                        }, void 0, false, {
-                                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                            lineNumber: 1038,
-                                                                            columnNumber: 31
-                                                                        }, this),
-                                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                            children: "Facial"
-                                                                        }, void 0, false, {
-                                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                            lineNumber: 1044,
-                                                                            columnNumber: 31
-                                                                        }, this)
-                                                                    ]
-                                                                }, void 0, true, {
-                                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                    lineNumber: 1032,
-                                                                    columnNumber: 29
-                                                                }, this),
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    className: `flex items-center space-x-1 ${checkinState.connectionStatus.vocal === 'connected' ? 'text-green-600' : checkinState.connectionStatus.vocal === 'error' ? 'text-red-600' : checkinState.connectionStatus.vocal === 'connecting' ? 'text-yellow-600' : 'text-gray-500'}`,
-                                                                    children: [
-                                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                            className: `w-1.5 h-1.5 rounded-full ${checkinState.connectionStatus.vocal === 'connected' ? 'bg-green-500' : checkinState.connectionStatus.vocal === 'error' ? 'bg-red-500' : checkinState.connectionStatus.vocal === 'connecting' ? 'bg-yellow-500' : 'bg-gray-400'}`
-                                                                        }, void 0, false, {
-                                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                            lineNumber: 1053,
-                                                                            columnNumber: 31
-                                                                        }, this),
-                                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                                            children: "Voice AI"
-                                                                        }, void 0, false, {
-                                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                            lineNumber: 1059,
-                                                                            columnNumber: 31
-                                                                        }, this)
-                                                                    ]
-                                                                }, void 0, true, {
-                                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                                    lineNumber: 1047,
-                                                                    columnNumber: 29
-                                                                }, this)
-                                                            ]
-                                                        }, void 0, true, {
-                                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                            lineNumber: 1031,
-                                                            columnNumber: 27
-                                                        }, this)
-                                                    ]
-                                                }, void 0, true, {
-                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1024,
-                                                    columnNumber: 25
-                                                }, this)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 1017,
-                                                columnNumber: 21
-                                            }, this),
-                                            !checkinState.isConnecting && !checkinState.humeToken && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "text-red-600 text-sm flex items-center justify-center space-x-2",
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "w-2 h-2 bg-red-500 rounded-full"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                        lineNumber: 1069,
-                                                        columnNumber: 23
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        children: "Connection failed - emotion analysis unavailable"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                        lineNumber: 1070,
-                                                        columnNumber: 23
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 1068,
-                                                columnNumber: 21
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1009,
+                                        lineNumber: 301,
                                         columnNumber: 17
                                     }, this),
                                     checkinState.webcamReady && !checkinState.webcamError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                         size: "lg",
-                                        className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg disabled:bg-neutral-400",
+                                        className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg",
                                         onClick: startRecording,
-                                        disabled: checkinState.phase !== 'idle' || checkinState.isConnecting || !checkinState.humeToken,
-                                        children: checkinState.isConnecting ? 'Connecting...' : 'Start 60-Second Check-in'
+                                        disabled: checkinState.phase !== 'idle',
+                                        children: "Start 60-Second Check-in"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1078,
+                                        lineNumber: 313,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 943,
+                                lineNumber: 247,
                                 columnNumber: 13
                             }, this)
                         ]
@@ -1370,7 +594,7 @@ function PatientCheckin({}) {
                                                 className: "w-full h-auto"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 1102,
+                                                lineNumber: 333,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1380,31 +604,31 @@ function PatientCheckin({}) {
                                                         className: "w-2 h-2 bg-white rounded-full animate-pulse"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                        lineNumber: 1116,
+                                                        lineNumber: 347,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                         children: "Recording"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                        lineNumber: 1117,
+                                                        lineNumber: 348,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 1115,
+                                                lineNumber: 346,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1101,
+                                        lineNumber: 332,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                    lineNumber: 1100,
+                                    lineNumber: 331,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1422,29 +646,21 @@ function PatientCheckin({}) {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1125,
+                                                    lineNumber: 356,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                    className: "text-neutral-600 mb-2",
+                                                    className: "text-neutral-600",
                                                     children: "Please describe how you've been feeling"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1128,
+                                                    lineNumber: 359,
                                                     columnNumber: 19
-                                                }, this),
-                                                checkinState.humeToken !== 'demo-mode' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                    className: "text-sm text-blue-600",
-                                                    children: "💬 AI assistant is listening and ready to help you practice"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1132,
-                                                    columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                            lineNumber: 1124,
+                                            lineNumber: 355,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1455,7 +671,7 @@ function PatientCheckin({}) {
                                                     className: "h-3"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1140,
+                                                    lineNumber: 366,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1465,70 +681,32 @@ function PatientCheckin({}) {
                                                             children: "0:00"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                            lineNumber: 1145,
+                                                            lineNumber: 371,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                             children: "1:00"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                            lineNumber: 1146,
+                                                            lineNumber: 372,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                    lineNumber: 1144,
+                                                    lineNumber: 370,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                            lineNumber: 1139,
+                                            lineNumber: 365,
                                             columnNumber: 17
-                                        }, this),
-                                        checkinState.emotionData.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            className: "bg-green-50 border border-green-200 rounded-lg p-3",
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "text-center",
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "text-sm text-green-700 font-medium mb-1",
-                                                        children: "Emotion Analysis Active"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                        lineNumber: 1154,
-                                                        columnNumber: 23
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "text-xs text-green-600",
-                                                        children: [
-                                                            checkinState.emotionData.filter((d)=>d.source === 'facial').length,
-                                                            " facial readings, ",
-                                                            ' ',
-                                                            checkinState.emotionData.filter((d)=>d.source === 'vocal').length,
-                                                            " vocal readings"
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                        lineNumber: 1157,
-                                                        columnNumber: 23
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 1153,
-                                                columnNumber: 21
-                                            }, this)
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                            lineNumber: 1152,
-                                            columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                    lineNumber: 1123,
+                                    lineNumber: 354,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1538,18 +716,18 @@ function PatientCheckin({}) {
                                         children: "Speak naturally and describe your current health concerns, symptoms, or how you've been feeling recently."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1168,
+                                        lineNumber: 379,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                    lineNumber: 1167,
+                                    lineNumber: 378,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                            lineNumber: 1098,
+                            lineNumber: 329,
                             columnNumber: 13
                         }, this)
                     }, void 0, false),
@@ -1564,7 +742,7 @@ function PatientCheckin({}) {
                                         children: "✓"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1181,
+                                        lineNumber: 392,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1572,7 +750,7 @@ function PatientCheckin({}) {
                                         children: "Thank You!"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1182,
+                                        lineNumber: 393,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1580,7 +758,7 @@ function PatientCheckin({}) {
                                         children: "Your check-in has been completed successfully."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1185,
+                                        lineNumber: 396,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1588,18 +766,18 @@ function PatientCheckin({}) {
                                         children: "Your healthcare provider will review this information before your appointment."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1188,
+                                        lineNumber: 399,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1180,
+                                lineNumber: 391,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                            lineNumber: 1179,
+                            lineNumber: 390,
                             columnNumber: 13
                         }, this)
                     }, void 0, false),
@@ -1613,7 +791,7 @@ function PatientCheckin({}) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1199,
+                                lineNumber: 410,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1623,7 +801,7 @@ function PatientCheckin({}) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1200,
+                                lineNumber: 411,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1634,7 +812,7 @@ function PatientCheckin({}) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1201,
+                                lineNumber: 412,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1644,98 +822,19 @@ function PatientCheckin({}) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1202,
+                                lineNumber: 413,
                                 columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                children: [
-                                    "Debug: Hume Token: ",
-                                    checkinState.humeToken ? 'Available' : 'None'
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1203,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                children: [
-                                    "Debug: Expression WS: ",
-                                    checkinState.humeToken === 'demo-mode' ? 'Demo Mode' : checkinState.humeWebSocket?.readyState === WebSocket.OPEN ? 'Connected' : 'Disconnected'
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1204,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                children: [
-                                    "Debug: EVI WS: ",
-                                    checkinState.humeToken === 'demo-mode' ? 'Demo Mode' : checkinState.eviWebSocket?.readyState === WebSocket.OPEN ? 'Connected' : 'Disconnected'
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1211,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                children: [
-                                    "Debug: Emotion Data Points: ",
-                                    checkinState.emotionData.length
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1218,
-                                columnNumber: 13
-                            }, this),
-                            checkinState.emotionData.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "mt-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                        children: "Latest Emotions:"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                        lineNumber: 1221,
-                                        columnNumber: 17
-                                    }, this),
-                                    checkinState.emotionData.slice(-3).map((point, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                            className: "ml-2 text-xs",
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                className: "font-mono",
-                                                children: [
-                                                    point.source,
-                                                    ": Joy:",
-                                                    point.emotions.joy.toFixed(2),
-                                                    "Sad:",
-                                                    point.emotions.sadness.toFixed(2),
-                                                    "Anger:",
-                                                    point.emotions.anger.toFixed(2)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                                lineNumber: 1224,
-                                                columnNumber: 21
-                                            }, this)
-                                        }, index, false, {
-                                            fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                            lineNumber: 1223,
-                                            columnNumber: 19
-                                        }, this))
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                                lineNumber: 1220,
-                                columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                        lineNumber: 1198,
+                        lineNumber: 409,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/aura/PatientCheckin.tsx",
-                lineNumber: 927,
+                lineNumber: 231,
                 columnNumber: 7
             }, this)
         ]
