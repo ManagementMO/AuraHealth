@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Aura Health Phase 1 is a comprehensive, production-ready pre-consultation patient check-in system that allows patients to record a 60-second video describing their health concerns. The system captures audio and video for real-time AI-powered emotional analysis using Hume AI's Expression Measurement API & Speech-to-Speech EVI API, with secure backend processing and MongoDB data persistence. This phase establishes the foundation for a comprehensive telehealth platform while focusing on understanding patient emotional states through verbal and non-verbal cues. The system must be secure, extensible, and ready for future phases including doctor dashboards and live call interfaces.
+Aura Health Phase 1 is a comprehensive, production-ready pre-consultation patient check-in system that allows patients to record a 60-second video describing their health concerns. The system captures audio and video for real-time AI-powered emotional analysis using Hume AI's Expression Measurement API, with secure backend processing and MongoDB data persistence. This phase establishes the foundation for a comprehensive telehealth platform while focusing on understanding patient emotional states through verbal and non-verbal cues. The system must be secure, extensible, and ready for future phases including doctor dashboards and live call interfaces.
 
 ## Requirements
 
