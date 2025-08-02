@@ -1,9 +1,12 @@
 {
   "app": {
-    "[project]/src/app/page": [
+    "[project]/src/app/call/[callId]/page": [
       "static/media/06ba6ef833b337bc-s.p.0faac26c.woff2"
     ],
-    "[project]/src/app/video-call/page": [
+    "[project]/src/app/check-in/page": [
+      "static/media/06ba6ef833b337bc-s.p.0faac26c.woff2"
+    ],
+    "[project]/src/app/page": [
       "static/media/06ba6ef833b337bc-s.p.0faac26c.woff2"
     ]
   },

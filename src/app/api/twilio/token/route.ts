@@ -1,78 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server'
-import twilio from 'twilio'
+import { NextResponse } from 'next/server';
+import Twilio from 'twilio';
 
-// Initialize Twilio client
-const accountSid = process.env.TWILIO_ACCOUNT_SID
-const apiKey = process.env.TWILIO_API_KEY
-const apiSecret = process.env.TWILIO_API_SECRET
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { roomName, participantName } = await request.json()
+    const { identity, roomName } = await request.json();
 
-    if (!roomName || !participantName) {
-      return NextResponse.json(
-        { error: 'Room name and participant name are required' },
-        { status: 400 }
-      )
+    // Validate the input from the client
+    if (!identity || typeof identity !== 'string') {
+      return NextResponse.json({ error: 'A valid "identity" string is required.' }, { status: 400 });
+    }
+    if (!roomName || typeof roomName !== 'string') {
+      return NextResponse.json({ error: 'A valid "roomName" string is required.' }, { status: 400 });
     }
 
-    // Debug: Log credential status
-    console.log('Twilio credentials check:', {
-      hasAccountSid: !!accountSid,
-      hasApiKey: !!apiKey,
-      hasApiSecret: !!apiSecret,
-      accountSidLength: accountSid?.length,
-      accountSidPrefix: accountSid?.substring(0, 2),
-      apiKeyPrefix: apiKey?.substring(0, 2)
-    })
+    // Retrieve your Twilio credentials from environment variables
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const apiKeySid = process.env.TWILIO_API_KEY_SID;
+    const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
 
-    // For development, create a mock token if Twilio credentials aren't set
-    if (!accountSid || !apiKey || !apiSecret) {
-      console.warn('Twilio credentials not found, using mock token for development')
-      return NextResponse.json({
-        token: 'mock_token_for_development',
-        roomName,
-        participantName
-      })
+    if (!accountSid || !apiKeySid || !apiKeySecret) {
+      console.error("Twilio environment variables are not set.");
+      return NextResponse.json({ error: 'Server configuration error.' }, { status: 500 });
     }
 
-    // Create access token using the correct constructor
-    const AccessToken = twilio.jwt.AccessToken
-    const VideoGrant = AccessToken.VideoGrant
+    const AccessToken = Twilio.jwt.AccessToken;
+    const VideoGrant = AccessToken.VideoGrant;
 
-    const token = new AccessToken(
-      accountSid!,
-      apiKey!,
-      apiSecret!,
-      { identity: participantName }
-    )
+    // Create a new access token
+    const accessToken = new AccessToken(accountSid, apiKeySid, apiKeySecret, {
+      identity: identity,
+    });
 
-    // Create video grant
+    // Create a video grant for the specific room
     const videoGrant = new VideoGrant({
       room: roomName,
-    })
+    });
 
-    token.addGrant(videoGrant)
+    // Add the grant to the token
+    accessToken.addGrant(videoGrant);
 
-    return NextResponse.json({
-      token: token.toJwt(),
-      roomName,
-      participantName
-    })
+    // Serialize the token to a JWT and send it to the client
+    return NextResponse.json({ token: accessToken.toJwt() });
 
   } catch (error) {
-    console.error('Error generating Twilio token:', error)
-    
-    // Provide more specific error information
-    let errorMessage = 'Failed to generate token'
-    if (error instanceof Error) {
-      errorMessage = error.message
-    }
-    
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    )
+    console.error('Twilio Token API Error:', error);
+    return NextResponse.json({ error: 'Failed to generate Twilio token.' }, { status: 500 });
   }
-} 
+}
