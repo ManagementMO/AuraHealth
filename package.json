@@ -28,7 +28,9 @@
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
+    "twilio": "^5.8.0",
     "twilio-video": "^2.32.1",
+    "ws": "^8.18.3",
     "zustand": "^5.0.7"
   },
   "devDependencies": {
