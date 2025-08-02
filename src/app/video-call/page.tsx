@@ -189,8 +189,18 @@ const VideoCallPage = () => {
         }
       });
 
-      // Handle remote participants
-      room.on("participantConnected", (participant: RemoteParticipant) => {
+      // Handle local track publications
+      room.localParticipant.on("trackPublished", (publication) => {
+        console.log("Local track published:", publication.trackName);
+      });
+
+      room.localParticipant.on("trackUnpublished", (publication) => {
+        console.log("Local track unpublished:", publication.trackName);
+      });
+
+      // Handle existing participants in the room
+      room.participants.forEach((participant: RemoteParticipant) => {
+        console.log("Existing participant found:", participant.identity);
         setCallState((prev) => ({
           ...prev,
           remoteParticipants: new Map(
@@ -198,19 +208,88 @@ const VideoCallPage = () => {
           ),
         }));
 
+        // Subscribe to existing tracks
+        participant.tracks.forEach((publication) => {
+          if (publication.isSubscribed) {
+            const track = publication.track;
+            if (track && track.kind === "video" && remoteVideoRef.current) {
+              track.attach(remoteVideoRef.current);
+            }
+          }
+        });
+
+        // Subscribe to new tracks
         participant.on("trackSubscribed", (track: RemoteTrack) => {
+          console.log(
+            "Track subscribed from existing participant:",
+            track.kind,
+            track.name
+          );
           if (track.kind === "video" && remoteVideoRef.current) {
             track.attach(remoteVideoRef.current);
+          }
+        });
+
+        participant.on("trackUnsubscribed", (track: RemoteTrack) => {
+          console.log(
+            "Track unsubscribed from existing participant:",
+            track.kind,
+            track.name
+          );
+          if (track.kind === "video" && remoteVideoRef.current) {
+            track.detach(remoteVideoRef.current);
+          }
+        });
+      });
+
+      // Handle remote participants
+      room.on("participantConnected", (participant: RemoteParticipant) => {
+        console.log("Participant connected:", participant.identity);
+        setCallState((prev) => ({
+          ...prev,
+          remoteParticipants: new Map(
+            prev.remoteParticipants.set(participant.sid, participant)
+          ),
+        }));
+
+        // Subscribe to existing tracks
+        participant.tracks.forEach((publication) => {
+          if (publication.isSubscribed) {
+            const track = publication.track;
+            if (track && track.kind === "video" && remoteVideoRef.current) {
+              track.attach(remoteVideoRef.current);
+            }
+          }
+        });
+
+        // Subscribe to new tracks
+        participant.on("trackSubscribed", (track: RemoteTrack) => {
+          console.log("Track subscribed:", track.kind, track.name);
+          if (track.kind === "video" && remoteVideoRef.current) {
+            track.attach(remoteVideoRef.current);
+          }
+        });
+
+        participant.on("trackUnsubscribed", (track: RemoteTrack) => {
+          console.log("Track unsubscribed:", track.kind, track.name);
+          if (track.kind === "video" && remoteVideoRef.current) {
+            track.detach(remoteVideoRef.current);
           }
         });
       });
 
       room.on("participantDisconnected", (participant: RemoteParticipant) => {
+        console.log("Participant disconnected:", participant.identity);
         setCallState((prev) => {
           const newParticipants = new Map(prev.remoteParticipants);
           newParticipants.delete(participant.sid);
           return { ...prev, remoteParticipants: newParticipants };
         });
+
+        // Clear the remote video when participant disconnects
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = null;
+        }
       });
 
       toast.success("Connected to room", {
