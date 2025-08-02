@@ -104,7 +104,7 @@
   - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
 
-- [x] 13. Set up Hume AI WebSocket connections
+- [ ] 13. Set up Hume AI WebSocket connections
 
 
 
@@ -117,6 +117,9 @@
   - _Requirements: 6.1, 6.2, 6.3, 11.1_
 
 - [ ] 14. Implement real-time emotion analysis
+
+
+
 
 
 
