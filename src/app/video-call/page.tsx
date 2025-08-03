@@ -103,7 +103,7 @@ const VideoCallPage = () => {
       setCallState((prev) => ({ ...prev, audioPermission: "granted" }));
       return true;
     } catch (error) {
-      console.error("Audio permission denied:", error);
+      console.log("Audio permission denied:", error);
       setCallState((prev) => ({ ...prev, audioPermission: "denied" }));
       return false;
     }
@@ -116,7 +116,7 @@ const VideoCallPage = () => {
       setCallState((prev) => ({ ...prev, videoPermission: "granted" }));
       return true;
     } catch (error) {
-      console.error("Video permission denied:", error);
+      console.log("Video permission denied:", error);
       setCallState((prev) => ({ ...prev, videoPermission: "denied" }));
       return false;
     }
@@ -143,7 +143,7 @@ const VideoCallPage = () => {
       const data = await response.json();
       return data.token;
     } catch (error) {
-      console.error("Error getting Twilio token:", error);
+      console.log("Error getting Twilio token:", error);
       throw new Error("Unable to get access token");
     }
   };
@@ -323,7 +323,7 @@ const VideoCallPage = () => {
       // Start data aggregation when call connects
       startRecording();
     } catch (error) {
-      console.error("Failed to connect:", error);
+      console.log("Failed to connect:", error);
       setCallState((prev) => ({
         ...prev,
         isConnecting: false,
@@ -332,11 +332,11 @@ const VideoCallPage = () => {
 
       // Check if it's a permission error
       if (error instanceof Error && error.message.includes("permission")) {
-        console.error(
+        console.log(
           "Permission error - please check microphone and camera permissions"
         );
       } else {
-        console.error("Connection failed - unable to join the video call");
+        console.log("Connection failed - unable to join the video call");
       }
     }
   };
@@ -560,7 +560,7 @@ const VideoCallPage = () => {
             localVideoRef.current.srcObject = stream;
           }
         } catch (error) {
-          console.error("Error starting video preview:", error);
+          console.log("Error starting video preview:", error);
         }
       };
       startVideoPreview();
@@ -593,7 +593,7 @@ const VideoCallPage = () => {
           !callState.isConnecting
         ) {
           setCallState((prev) => ({ ...prev, isJoining: false }));
-          console.error(
+          console.log(
             "Connection timeout - please try joining the call again"
           );
         }
@@ -648,11 +648,11 @@ const VideoCallPage = () => {
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
                 <div className="w-9 h-9 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-xl flex items-center justify-center shadow-sm">
-                  <Image src="/favicon.ico" alt="AuraHealth" width={20} height={20} className="w-5 h-5" />
+                  <Image src="/favicon.ico" alt="SentimentMD" width={20} height={20} className="w-5 h-5" />
                 </div>
                 <div>
                   <span className="text-xl font-bold text-slate-900">
-                    AuraHealth
+                    SentimentMD
                   </span>
                   <div className="text-xs text-slate-500 -mt-0.5">
                     Video Consultation
@@ -790,9 +790,9 @@ const VideoCallPage = () => {
         <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-700 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-rose-200/20 to-pink-200/20 border border-rose-300/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <Image src="/favicon.ico" alt="AuraHealth" width={16} height={16} className="w-4 h-4" />
+              <Image src="/favicon.ico" alt="SentimentMD" width={16} height={16} className="w-4 h-4" />
             </div>
-            <span className="text-white font-medium">AuraHealth</span>
+            <span className="text-white font-medium">SentimentMD</span>
           </div>
           <Button
             onClick={handleBackToInitial}
@@ -1092,9 +1092,9 @@ const VideoCallPage = () => {
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-rose-200/20 to-pink-200/20 border border-rose-300/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <Image src="/favicon.ico" alt="AuraHealth" width={16} height={16} className="w-4 h-4" />
+              <Image src="/favicon.ico" alt="SentimentMD" width={16} height={16} className="w-4 h-4" />
             </div>
-            <span className="text-white font-medium text-sm">AuraHealth</span>
+            <span className="text-white font-medium text-sm">SentimentMD</span>
           </div>
         </div>
 
@@ -1124,7 +1124,7 @@ const VideoCallPage = () => {
             <p className="text-gray-400 text-base mb-8">
               {callState.isCreatingRoom
                 ? "Patient data has been analyzed and is ready for review."
-                : "Thank you for using AuraHealth for your consultation."}
+                : "Thank you for using SentimentMD for your consultation."}
             </p>
 
             {/* Call Statistics */}
@@ -1233,7 +1233,7 @@ const VideoCallPage = () => {
                     variant="outline"
                     className="w-full h-12 border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 hover:border-gray-500 font-medium rounded-lg transition-all duration-200"
                   >
-                    <Image src="/favicon.ico" alt="AuraHealth" width={16} height={16} className="w-4 h-4 mr-2 brightness-0 invert" />
+                    <Image src="/favicon.ico" alt="SentimentMD" width={16} height={16} className="w-4 h-4 mr-2 brightness-0 invert" />
                     Back to Dashboard
                   </Button>
                 </div>
@@ -1245,7 +1245,7 @@ const VideoCallPage = () => {
               <p className="text-gray-500 text-sm">
                 {callState.isCreatingRoom
                   ? "Patient consultation data has been securely processed and stored."
-                  : "Your consultation session has ended. We hope AuraHealth was helpful."}
+                  : "Your consultation session has ended. We hope SentimentMD was helpful."}
               </p>
             </div>
           </div>
@@ -1264,7 +1264,7 @@ const VideoCallPage = () => {
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               <span className="text-white font-medium text-sm">
-                AuraHealth Meeting
+                SentimentMD Meeting
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-4 text-gray-300 text-xs">

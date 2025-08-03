@@ -129,7 +129,7 @@ export default function ReportPage() {
               <div className="w-10 h-10 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-xl flex items-center justify-center shadow-sm">
                 <Image
                   src="/favicon.ico"
-                  alt="AuraHealth"
+                  alt="SentimentMD"
                   width={20}
                   height={20}
                   className="w-5 h-5"

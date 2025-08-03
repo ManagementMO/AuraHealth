@@ -312,10 +312,10 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-lg flex items-center justify-center shadow-sm">
-                <Image src="/favicon.ico" alt="AuraHealth" width={20} height={20} className="w-5 h-5" />
+                <Image src="/favicon.ico" alt="SentimentMD" width={20} height={20} className="w-5 h-5" />
               </div>
               <span className="text-xl font-bold text-slate-900">
-                AuraHealth
+                SentimentMD
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
@@ -494,7 +494,7 @@ export default function Home() {
             <Card className="feature-card border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 group">
               <CardContent className="p-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/30 rounded-xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-rose-200 group-hover:to-pink-200 transition-all duration-300 shadow-sm">
-                  <Image src="/favicon.ico" alt="AuraHealth" width={24} height={24} className="w-6 h-6 transition-all duration-300" />
+                  <Image src="/favicon.ico" alt="SentimentMD" width={24} height={24} className="w-6 h-6 transition-all duration-300" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">
                   Emotional Wellness
@@ -534,7 +534,7 @@ export default function Home() {
               Simple Steps to Better Health
             </h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Getting started with AuraHealth is easy and secure
+              Getting started with SentimentMD is easy and secure
             </p>
           </div>
 
@@ -709,7 +709,7 @@ export default function Home() {
             Ready to Experience Better Healthcare?
           </h2>
           <p className="cta-content text-xl text-blue-100 mb-8 leading-relaxed">
-            Join thousands of patients who trust AuraHealth for their healthcare
+            Join thousands of patients who trust SentimentMD for their healthcare
             needs
           </p>
           <Button
@@ -733,16 +733,16 @@ export default function Home() {
             <div className="col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-lg flex items-center justify-center shadow-sm">
-                  <Image src="/favicon.ico" alt="AuraHealth" width={20} height={20} className="w-5 h-5" />
+                  <Image src="/favicon.ico" alt="SentimentMD" width={20} height={20} className="w-5 h-5" />
                 </div>
-                <span className="text-xl font-bold">AuraHealth</span>
+                <span className="text-xl font-bold">SentimentMD</span>
               </div>
               <p className="text-slate-400 mb-6 max-w-md">
                 Revolutionizing healthcare through secure, accessible, and
                 personalized telemedicine solutions.
               </p>
               <div className="flex items-center space-x-4 text-sm text-slate-400">
-                <span>© 2025 AuraHealth</span>
+                <span>© 2025 SentimentMD</span>
                 <span>•</span>
                 <Link
                   href="/privacy"
