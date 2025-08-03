@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, RefObject } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Mic,
   MicOff,
@@ -18,7 +19,6 @@ import {
   Copy,
   Check,
   ArrowLeft,
-  Heart,
   Shield,
   Play,
   UserCheck,
@@ -647,8 +647,8 @@ const VideoCallPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Heart className="w-5 h-5 text-white" />
+                <div className="w-9 h-9 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-xl flex items-center justify-center shadow-sm">
+                  <Image src="/favicon.ico" alt="AuraHealth" width={20} height={20} className="w-5 h-5" />
                 </div>
                 <div>
                   <span className="text-xl font-bold text-slate-900">
@@ -789,8 +789,8 @@ const VideoCallPage = () => {
         {/* Simple Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-700 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <Heart className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 bg-gradient-to-br from-rose-200/20 to-pink-200/20 border border-rose-300/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
+              <Image src="/favicon.ico" alt="AuraHealth" width={16} height={16} className="w-4 h-4" />
             </div>
             <span className="text-white font-medium">AuraHealth</span>
           </div>
@@ -1091,8 +1091,8 @@ const VideoCallPage = () => {
             <span className="text-white font-medium text-sm">Call Ended</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <Heart className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 bg-gradient-to-br from-rose-200/20 to-pink-200/20 border border-rose-300/30 rounded-lg flex items-center justify-center backdrop-blur-sm">
+              <Image src="/favicon.ico" alt="AuraHealth" width={16} height={16} className="w-4 h-4" />
             </div>
             <span className="text-white font-medium text-sm">AuraHealth</span>
           </div>
@@ -1233,7 +1233,7 @@ const VideoCallPage = () => {
                     variant="outline"
                     className="w-full h-12 border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 hover:border-gray-500 font-medium rounded-lg transition-all duration-200"
                   >
-                    <Heart className="w-4 h-4 mr-2" />
+                    <Image src="/favicon.ico" alt="AuraHealth" width={16} height={16} className="w-4 h-4 mr-2 brightness-0 invert" />
                     Back to Dashboard
                   </Button>
                 </div>

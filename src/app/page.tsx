@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Shield,
   Users,
-  Heart,
   Clock,
   CheckCircle,
   Star,
@@ -311,8 +311,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-lg flex items-center justify-center shadow-sm">
+                <Image src="/favicon.ico" alt="AuraHealth" width={20} height={20} className="w-5 h-5" />
               </div>
               <span className="text-xl font-bold text-slate-900">
                 AuraHealth
@@ -493,8 +493,8 @@ export default function Home() {
 
             <Card className="feature-card border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 group">
               <CardContent className="p-8">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors duration-300">
-                  <Heart className="w-6 h-6 text-purple-600 group-hover:text-white transition-colors duration-300" />
+                <div className="w-12 h-12 bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/30 rounded-xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-rose-200 group-hover:to-pink-200 transition-all duration-300 shadow-sm">
+                  <Image src="/favicon.ico" alt="AuraHealth" width={24} height={24} className="w-6 h-6 transition-all duration-300" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">
                   Emotional Wellness
@@ -732,8 +732,8 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-lg flex items-center justify-center shadow-sm">
+                  <Image src="/favicon.ico" alt="AuraHealth" width={20} height={20} className="w-5 h-5" />
                 </div>
                 <span className="text-xl font-bold">AuraHealth</span>
               </div>

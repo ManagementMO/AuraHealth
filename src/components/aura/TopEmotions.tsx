@@ -20,10 +20,21 @@ export function TopEmotions({
         .slice(0, numEmotions)
         .map((emotion, i) => {
           const percentage = Math.round(emotion.score * 100);
-          const intensity = percentage > 70 ? 'high' : percentage > 40 ? 'medium' : 'low';
-          const barColor = percentage > 70 ? 'bg-green-500' : percentage > 40 ? 'bg-yellow-500' : 'bg-blue-500';
-          const bgColor = percentage > 70 ? 'bg-green-500/10' : percentage > 40 ? 'bg-yellow-500/10' : 'bg-blue-500/10';
-          
+          const intensity =
+            percentage > 70 ? "high" : percentage > 40 ? "medium" : "low";
+          const barColor =
+            percentage > 70
+              ? "bg-green-500"
+              : percentage > 40
+              ? "bg-yellow-500"
+              : "bg-blue-500";
+          const bgColor =
+            percentage > 70
+              ? "bg-green-500/10"
+              : percentage > 40
+              ? "bg-yellow-500/10"
+              : "bg-blue-500/10";
+
           return (
             <div
               key={i}
@@ -31,17 +42,19 @@ export function TopEmotions({
             >
               {/* Progress bar background */}
               <div className="absolute inset-0 flex">
-                <div 
+                <div
                   className={`${barColor} opacity-20 transition-all duration-300`}
                   style={{ width: `${percentage}%` }}
                 ></div>
               </div>
-              
+
               {/* Content */}
               <div className="relative flex items-center justify-between px-2 py-1.5 min-h-[28px]">
                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                   <div className="flex-shrink-0 w-4 h-4 rounded-full bg-gray-700/50 flex items-center justify-center border border-gray-500/30">
-                    <span className="text-xs font-bold text-gray-200">{i + 1}</span>
+                    <span className="text-xs font-bold text-gray-200">
+                      {i + 1}
+                    </span>
                   </div>
                   <span className="text-xs font-medium text-gray-200 lowercase truncate">
                     {emotion.name}

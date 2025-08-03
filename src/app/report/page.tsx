@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   FileText,
   Download,
@@ -8,7 +9,6 @@ import {
   Brain,
   CheckCircle,
   Clock,
-  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -126,8 +126,14 @@ export default function ReportPage() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Heart className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-rose-100 to-pink-100 border border-rose-200/50 rounded-xl flex items-center justify-center shadow-sm">
+                <Image
+                  src="/favicon.ico"
+                  alt="AuraHealth"
+                  width={20}
+                  height={20}
+                  className="w-5 h-5"
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900">

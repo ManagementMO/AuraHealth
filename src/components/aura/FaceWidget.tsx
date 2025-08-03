@@ -359,7 +359,7 @@ export function FaceWidgets({
                   <TopEmotions emotions={emotions} numEmotions={8} />
                 </div>
               </div>
-              
+
               <div className="pt-2 mt-2 border-t border-gray-600/30 flex-shrink-0">
                 <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">
                   Overall State
