@@ -28,7 +28,7 @@ function Hume({ children }: HumeProps) {
   });
 
   useEffect(() => {
-    const fetchApiKey = async () => {
+    const fetchApiKeyInner = async () => {
       try {
         console.log("Fetching Hume API key from server...");
         
@@ -60,7 +60,7 @@ function Hume({ children }: HumeProps) {
       }
     };
 
-    fetchApiKey();
+    fetchApiKeyInner();
   }, []);
 
   return <HumeContext.Provider value={hume}>{children}</HumeContext.Provider>;

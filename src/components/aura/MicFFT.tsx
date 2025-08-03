@@ -2,7 +2,7 @@
 
 import { cn } from "@/utils";
 import { motion } from "motion/react";
-import AutoSizer from "react-virtualized-auto-sizer"
+import { AutoSizer } from "react-virtualized";
 
 export default function MicFFT({
   fft,
