@@ -7,7 +7,7 @@ import { Toggle } from "../ui/toggle";
 import MicFFT from "./MicFFT";
 import { cn } from "@/utils";
 
-export default function Controls() {
+export default function Controls({ onSessionEnd }: { onSessionEnd?: () => void }) {
   const { disconnect, status, isMuted, unmute, mute, micFft } = useVoice();
 
   return (
@@ -63,6 +63,11 @@ export default function Controls() {
             <Button
               className={"flex items-center gap-1 rounded-full"}
               onClick={() => {
+                if (onSessionEnd) {
+                  // For practice sessions - trigger report generation
+                  onSessionEnd();
+                }
+                // Always disconnect the call
                 disconnect();
               }}
               variant={"destructive"}
@@ -73,7 +78,7 @@ export default function Controls() {
                   strokeWidth={0}
                 />
               </span>
-              <span>End Call</span>
+              <span>{onSessionEnd ? "End Practice" : "End Call"}</span>
             </Button>
           </motion.div>
         ) : null}
