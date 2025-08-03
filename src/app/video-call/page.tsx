@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, RefObject } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Mic,
   MicOff,
@@ -42,6 +42,7 @@ import {
 
 // Face Analysis Widget
 import { FaceWidgets } from "@/components/aura/FaceWidget";
+import { useDataAggregation } from "@/contexts/DataAggregationContext";
 
 interface CallState {
   isConnecting: boolean;
@@ -63,7 +64,10 @@ interface CallState {
 
 const VideoCallPage = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const roomNameFromUrl = searchParams.get("room");
+  const { startRecording, stopRecording, isRecording, getDataSummary } =
+    useDataAggregation();
 
   const [callState, setCallState] = useState<CallState>({
     isConnecting: false,
@@ -85,7 +89,8 @@ const VideoCallPage = () => {
 
   const [localRoomName, setLocalRoomName] = useState(roomNameFromUrl || "");
   const [participantName, setParticipantName] = useState("");
-  const [analysisVideoElement, setAnalysisVideoElement] = useState<HTMLVideoElement | null>(null);
+  const [analysisVideoElement, setAnalysisVideoElement] =
+    useState<HTMLVideoElement | null>(null);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -208,7 +213,11 @@ const VideoCallPage = () => {
       // Handle local track publications
       room.localParticipant.on("trackPublished", (publication) => {
         console.log("Local track published:", publication.trackName);
-        if (publication.track && publication.track.kind === "video" && localVideoRef.current) {
+        if (
+          publication.track &&
+          publication.track.kind === "video" &&
+          localVideoRef.current
+        ) {
           publication.track.attach(localVideoRef.current);
         }
       });
@@ -314,6 +323,9 @@ const VideoCallPage = () => {
       toast.success("Connected to room", {
         description: `Joined ${callState.roomName} as ${callState.participantName}`,
       });
+
+      // Start data aggregation when call connects
+      startRecording();
     } catch (error) {
       console.error("Failed to connect:", error);
       setCallState((prev) => ({
@@ -391,6 +403,21 @@ const VideoCallPage = () => {
   };
 
   const endCall = () => {
+    // Stop data aggregation
+    stopRecording();
+
+    // Get data summary before stopping
+    const dataSummary = getDataSummary();
+    console.log("Call ended. Data summary:", dataSummary);
+
+    if (dataSummary.totalPoints > 0) {
+      toast.success(
+        `Call ended. Collected ${
+          dataSummary.totalPoints
+        } data points over ${Math.round(dataSummary.duration / 1000)}s`
+      );
+    }
+
     // Clean up analysis video element
     setAnalysisVideoElement(null);
 
@@ -398,6 +425,17 @@ const VideoCallPage = () => {
       callState.room.disconnect();
     }
 
+    // Check if this is the doctor (room creator) and route to reports page
+    if (callState.isCreatingRoom) {
+      toast.success("Call ended. Redirecting to reports...");
+      // Small delay to show the toast before redirecting
+      setTimeout(() => {
+        router.push("/report");
+      }, 1500);
+      return;
+    }
+
+    // For patients, stay on the video call page and show call ended state
     // Update URL to remove room parameter when call ends
     const newUrl = `${window.location.origin}/video-call`;
     window.history.pushState({}, "", newUrl);
@@ -626,15 +664,11 @@ const VideoCallPage = () => {
     };
   }, [callState.room]);
 
-
-
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
-
-
 
   // Show initial interface
   if (callState.currentStep === "initial") {
@@ -1213,6 +1247,12 @@ const VideoCallPage = () => {
                   {callState.participantName}
                 </span>
               </span>
+              {isRecording && (
+                <div className="flex items-center space-x-2 text-green-400">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium">Recording Data</span>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -1306,25 +1346,34 @@ const VideoCallPage = () => {
             </div>
 
             {/* Face Analysis Widget - Only for Healthcare Provider analyzing patient */}
-            {callState.isCreatingRoom && remoteVideoRef.current && remoteVideoRef.current.srcObject && (
-              <div className="absolute bottom-6 right-6 max-w-sm">
-                <div className="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-white/10">
-                  {remoteVideoRef &&remoteVideoRef.current && (
-                    <FaceWidgets
-                      customVideoElement={remoteVideoRef.current}
-                    />
-                  )}
+            {callState.isCreatingRoom &&
+              remoteVideoRef.current &&
+              remoteVideoRef.current.srcObject && (
+                <div className="absolute bottom-6 right-6 max-w-sm">
+                  <div className="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-white/10">
+                    {remoteVideoRef && remoteVideoRef.current && (
+                      <FaceWidgets
+                        customVideoElement={remoteVideoRef.current}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-            
+              )}
+
             {/* Debug Info for Healthcare Provider */}
             {callState.isCreatingRoom && (
               <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-md rounded-lg p-2 text-xs text-white">
                 <div>Provider View (Analyzing Patient)</div>
-                <div>Remote Video: {remoteVideoRef.current ? '✅' : '❌'}</div>
-                <div>Stream: {(remoteVideoRef.current?.srcObject) ? '✅' : '❌'}</div>
-                <div>Widget: {(callState.isCreatingRoom && remoteVideoRef.current?.srcObject) ? '✅' : '❌'}</div>
+                <div>Remote Video: {remoteVideoRef.current ? "✅" : "❌"}</div>
+                <div>
+                  Stream: {remoteVideoRef.current?.srcObject ? "✅" : "❌"}
+                </div>
+                <div>
+                  Widget:{" "}
+                  {callState.isCreatingRoom && remoteVideoRef.current?.srcObject
+                    ? "✅"
+                    : "❌"}
+                </div>
               </div>
             )}
 

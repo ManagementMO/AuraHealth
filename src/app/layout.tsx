@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Hume } from "@/contexts/HumeContext";
+import { DataAggregationProvider } from "@/contexts/DataAggregationContext";
 import { Suspense } from "react";
 
 const inter = Inter({
@@ -12,8 +13,15 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Aura Health - Pre-Consultation Check-in",
-  description: "Secure pre-consultation patient check-in system with AI-powered emotional analysis for healthcare providers.",
-  keywords: ["healthcare", "telemedicine", "patient check-in", "emotional analysis", "pre-consultation"],
+  description:
+    "Secure pre-consultation patient check-in system with AI-powered emotional analysis for healthcare providers.",
+  keywords: [
+    "healthcare",
+    "telemedicine",
+    "patient check-in",
+    "emotional analysis",
+    "pre-consultation",
+  ],
   authors: [{ name: "Aura Health" }],
   robots: "noindex, nofollow", // Privacy-focused for healthcare
 };
@@ -34,10 +42,12 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased bg-neutral-50 text-neutral-900`}
       >
         <Hume>
-          <Suspense fallback={<div>Loading...</div>}>
-            {children}
-            <Toaster />
-          </Suspense>
+          <DataAggregationProvider>
+            <Suspense fallback={<div>Loading...</div>}>
+              {children}
+              <Toaster />
+            </Suspense>
+          </DataAggregationProvider>
         </Hume>
       </body>
     </html>

@@ -3,6 +3,7 @@ import { None, Optional } from "../../lib/utilities/typeUtilities";
 import { useContext, useEffect, useRef, useState } from "react";
 
 import { HumeContext } from "../../contexts/HumeContext";
+import { useDataAggregation } from "../../contexts/DataAggregationContext";
 import { Descriptor } from "./Descriptor";
 import { FacePrediction } from "../../lib/data/facePrediction";
 import { LoaderSet } from "./LoaderSet";
@@ -10,15 +11,22 @@ import { TopEmotions } from "./TopEmotions";
 import { TrackedFace } from "../../lib/data/trackedFace";
 import { VideoRecorder } from "../../lib/media/videoRecorder";
 import { blobToBase64 } from "../../lib/utilities/blobUtilities";
-import { Environment, getApiUrlWs } from "../../lib/utilities/environmentUtilities";
+import {
+  Environment,
+  getApiUrlWs,
+} from "../../lib/utilities/environmentUtilities";
 
 type FaceWidgetsProps = {
   onCalibrate: Optional<(emotions: Emotion[]) => void>;
   customVideoElement?: HTMLVideoElement;
 };
 
-export function FaceWidgets({ onCalibrate, customVideoElement }: FaceWidgetsProps) {
+export function FaceWidgets({
+  onCalibrate,
+  customVideoElement,
+}: FaceWidgetsProps) {
   const humeContext = useContext(HumeContext);
+  const { addDataPoint } = useDataAggregation();
   const socketRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<VideoRecorder | null>(null);
   const photoRef = useRef<HTMLCanvasElement | null>(null);
@@ -106,13 +114,19 @@ export function FaceWidgets({ onCalibrate, customVideoElement }: FaceWidgetsProp
       console.log("Video recorder ready, starting photo capture");
       await capturePhoto();
     } else {
-      console.error("Expected video recorder to be ready, but it's not available");
+      console.error(
+        "Expected video recorder to be ready, but it's not available"
+      );
       setStatus("Video recorder not ready");
     }
   }
 
   async function socketOnMessage(event: MessageEvent) {
     setStatus("");
+
+    // Print out the raw websocket response for data schema review
+    console.log("Raw event.data:", event.data);
+
     const response = JSON.parse(event.data);
     console.log("Got response", response);
     const predictions: FacePrediction[] = response.face?.predictions || [];
@@ -131,10 +145,13 @@ export function FaceWidgets({ onCalibrate, customVideoElement }: FaceWidgetsProp
     }
 
     const newTrackedFaces: TrackedFace[] = [];
+    let primaryEmotions: Emotion[] = [];
+
     predictions.forEach(async (pred: FacePrediction, dataIndex: number) => {
       newTrackedFaces.push({ boundingBox: pred.bbox });
       if (dataIndex === 0) {
         const newEmotions = pred.emotions;
+        primaryEmotions = newEmotions;
         setEmotions(newEmotions);
         if (onCalibrate) {
           onCalibrate(newEmotions);
@@ -142,6 +159,18 @@ export function FaceWidgets({ onCalibrate, customVideoElement }: FaceWidgetsProp
       }
     });
     setTrackedFaces(newTrackedFaces);
+
+    // Send data to aggregation context if we have predictions
+    if (predictions.length > 0) {
+      console.log(
+        `Adding ${primaryEmotions.length} emotions to aggregation:`,
+        primaryEmotions
+          .map((e) => `${e.name}: ${e.score.toFixed(3)}`)
+          .slice(0, 5)
+          .join(", ") + (primaryEmotions.length > 5 ? "..." : "")
+      );
+      addDataPoint(primaryEmotions, predictions);
+    }
 
     await capturePhoto();
   }
@@ -238,16 +267,27 @@ export function FaceWidgets({ onCalibrate, customVideoElement }: FaceWidgetsProp
 
         // Add timeout to prevent hanging
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("VideoRecorder creation timed out")), 10000);
+          setTimeout(
+            () => reject(new Error("VideoRecorder creation timed out")),
+            10000
+          );
         });
 
-        const recorderPromise = VideoRecorder.create(videoElement, photoRef.current);
+        const recorderPromise = VideoRecorder.create(
+          videoElement,
+          photoRef.current
+        );
 
-        const recorder = (await Promise.race([recorderPromise, timeoutPromise])) as VideoRecorder;
+        const recorder = (await Promise.race([
+          recorderPromise,
+          timeoutPromise,
+        ])) as VideoRecorder;
 
         // Check if component is still mounted after async operation
         if (!mountRef.current) {
-          console.log("Component unmounted during recorder creation, cleaning up");
+          console.log(
+            "Component unmounted during recorder creation, cleaning up"
+          );
           recorder.stopRecording();
           recorderCreated.current = false;
           return;
@@ -261,7 +301,8 @@ export function FaceWidgets({ onCalibrate, customVideoElement }: FaceWidgetsProp
         setStatus("Connecting to server...");
       } catch (error) {
         console.error("Failed to create video recorder:", error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         setStatus(`Failed to initialize: ${errorMessage}`);
         recorderCreated.current = false;
       }
