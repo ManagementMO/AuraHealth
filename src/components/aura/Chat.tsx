@@ -9,8 +9,12 @@ import { toast } from "sonner";
 
 export default function ClientComponent({
   accessToken,
+  onCallConnected,
+  onSessionEnd,
 }: {
   accessToken: string;
+  onCallConnected?: () => void;
+  onSessionEnd?: () => void;
 }) {
   const timeout = useRef<number | null>(null);
   const ref = useRef<ComponentRef<typeof Messages> | null>(null);
@@ -44,9 +48,14 @@ export default function ClientComponent({
         onError={(error) => {
           toast.error(error.message);
         }}
+        onOpen={() => {
+          if (onCallConnected) {
+            onCallConnected();
+          }
+        }}
       >
         <Messages ref={ref} />
-        <Controls />
+        <Controls onSessionEnd={onSessionEnd} />
         <StartCall configId={configId} accessToken={accessToken} />
       </VoiceProvider>
     </div>
