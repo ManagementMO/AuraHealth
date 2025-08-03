@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Hume } from "@/contexts/HumeContext";
+import { Suspense } from "react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,8 +34,10 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased bg-neutral-50 text-neutral-900`}
       >
         <Hume>
-          {children}
-          <Toaster />
+          <Suspense fallback={<div>Loading...</div>}>
+            {children}
+            <Toaster />
+          </Suspense>
         </Hume>
       </body>
     </html>
