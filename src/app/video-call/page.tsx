@@ -673,125 +673,143 @@ const VideoCallPage = () => {
   // Show initial interface
   if (callState.currentStep === "initial") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
         {/* Navigation Header */}
-        <nav className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
+        <nav className="bg-white/95 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-slate-900">
-                  AuraHealth
-                </span>
+                <div>
+                  <span className="text-xl font-bold text-slate-900">
+                    AuraHealth
+                  </span>
+                  <div className="text-xs text-slate-500 -mt-0.5">
+                    Video Consultation
+                  </div>
+                </div>
               </div>
               <Button
                 asChild
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               >
                 <a href="/" className="flex items-center space-x-2">
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Home</span>
+                  <span>Back to Dashboard</span>
                 </a>
               </Button>
             </div>
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <section className="relative py-16 lg:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-4xl mx-auto">
-              {/* Trust Badge */}
-              <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-8">
-                <Shield className="w-4 h-4" />
-                <span>Secure • HIPAA Compliant • End-to-End Encrypted</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight">
-                Video Consultations
-                <span className="block text-blue-600">Made Simple</span>
+        {/* Main Content */}
+        <div className="flex-1 flex items-center justify-center px-4 py-16">
+          <div className="w-full max-w-2xl">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-slate-900 mb-4">
+                Start Your Consultation
               </h1>
-
-              <p className="text-xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-                Connect with healthcare providers through our secure,
-                high-quality video platform. Create a new room or join an
-                existing consultation.
+              <p className="text-xl text-slate-600 max-w-lg mx-auto leading-relaxed">
+                Connect securely with healthcare providers or join an existing
+                consultation room
               </p>
+            </div>
 
-              {/* Main Content */}
-              <div className="w-full max-w-md mx-auto">
-                <Card className="border-0 shadow-xl">
-                  <CardContent className="p-8">
-                    <div className="space-y-6">
-                      <div className="text-center space-y-4">
-                        <p className="text-slate-600">
-                          Choose how you&apos;d like to join a video call
-                        </p>
-                      </div>
-
-                      <div className="space-y-4">
-                        <Button
-                          onClick={handleCreateCall}
-                          className="w-full py-6 text-lg bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                          size="lg"
-                        >
-                          <Play className="w-5 h-5 mr-2" />
-                          Create New Room
-                        </Button>
-
-                        <div className="relative">
-                          <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
-                          </div>
-                          <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white px-2 text-slate-500">
-                              Or
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <Input
-                            value={localRoomName}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) => setLocalRoomName(e.target.value)}
-                            placeholder="Enter room name to join"
-                            className="h-12 text-base"
-                          />
-                          <Input
-                            value={participantName}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
-                            ) => setParticipantName(e.target.value)}
-                            placeholder="Enter your name"
-                            className="h-12 text-base"
-                          />
-                          <Button
-                            onClick={handleJoinCall}
-                            disabled={
-                              !localRoomName.trim() || !participantName.trim()
-                            }
-                            variant="outline"
-                            className="w-full py-6 text-lg border-2 border-blue-200 text-blue-600 hover:bg-blue-50"
-                            size="lg"
-                          >
-                            <UserCheck className="w-5 h-5 mr-2" />
-                            Join Call
-                          </Button>
-                        </div>
+            {/* Action Cards */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              {/* Create New Room Card */}
+              <Card
+                className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-teal-50 hover:shadow-2xl transition-all duration-300 group cursor-pointer"
+                onClick={handleCreateCall}
+              >
+                <CardContent className="p-8">
+                  <div className="text-center space-y-4">
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-600 rounded-xl mb-2 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Play className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900">
+                      Start New Room
+                    </h3>
+                    <p className="text-slate-600">
+                      Create a new consultation room and invite participants
+                    </p>
+                    <div className="pt-2">
+                      <div className="inline-flex items-center text-blue-600 font-medium group-hover:text-blue-700 transition-colors">
+                        <span>Create Room</span>
+                        <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Join Existing Room Card */}
+              <Card className="border-0 shadow-xl bg-white hover:shadow-2xl transition-all duration-300 group">
+                <CardContent className="p-8">
+                  <div className="space-y-4">
+                    <div className="text-center mb-4">
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl mb-2 shadow-lg">
+                        <UserCheck className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900">
+                        Join Room
+                      </h3>
+                      <p className="text-slate-600 text-sm">
+                        Enter room details to join an existing consultation
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700 block">
+                          Room Name
+                        </label>
+                        <Input
+                          value={localRoomName}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setLocalRoomName(e.target.value)
+                          }
+                          placeholder="room-abc123..."
+                          className="h-11 text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700 block">
+                          Your Name
+                        </label>
+                        <Input
+                          value={participantName}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setParticipantName(e.target.value)
+                          }
+                          placeholder="Dr. Smith / John Doe"
+                          className="h-11 text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        />
+                      </div>
+
+                      <Button
+                        onClick={handleJoinCall}
+                        disabled={
+                          !localRoomName.trim() || !participantName.trim()
+                        }
+                        className="w-full h-11 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Join Consultation
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </section>
+        </div>
       </div>
     );
   }
@@ -799,285 +817,157 @@ const VideoCallPage = () => {
   // Show setup interface (Google Meet-style)
   if (callState.currentStep === "setup") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-        {/* Navigation Header */}
-        <nav className="bg-white/95 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-teal-600 rounded-lg flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-slate-900">
-                  AuraHealth
-                </span>
-              </div>
-              <Button
-                onClick={handleBackToInitial}
-                variant="outline"
-                size="sm"
-                className="border-blue-200 text-blue-600 hover:bg-blue-50"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
+      <div className="min-h-screen bg-slate-900 flex flex-col">
+        {/* Simple Header */}
+        <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-700">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Heart className="w-4 h-4 text-white" />
             </div>
+            <span className="text-white font-medium">AuraHealth</span>
           </div>
-        </nav>
+          <Button
+            onClick={handleBackToInitial}
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white hover:bg-slate-800"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </div>
 
-        {/* Setup Section */}
-        <section className="py-16 lg:py-24">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
-                {callState.isCreatingRoom
-                  ? "Setup Your Room"
-                  : "Join Room Setup"}
-              </h1>
-              <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                Configure your audio and video settings before joining the
-                consultation
-              </p>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-12 items-start">
-              {/* Left Column - Video Preview & Controls */}
-              <div className="space-y-8">
-                {/* Video Preview */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Video Preview
-                  </h2>
-                  <div className="relative w-full max-w-lg mx-auto">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-200 aspect-video shadow-2xl">
-                      {callState.videoPermission === "granted" ? (
-                        <>
-                          <video
-                            ref={localVideoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="w-full h-full object-cover"
-                          />
-                          {!callState.isVideoOn && (
-                            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
-                              <div className="text-center text-white">
-                                <VideoOff className="w-16 h-16 text-white/60 mx-auto mb-4" />
-                                <p className="text-lg font-medium">
-                                  Camera is off
-                                </p>
-                                <p className="text-sm text-white/60">
-                                  Click the camera button to turn it on
-                                </p>
+        {/* Main Content */}
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-6xl">
+            <div className="grid lg:grid-cols-2 gap-8 items-center">
+              {/* Left Side - Video Preview */}
+              <div className="flex flex-col items-center">
+                <div className="relative inline-block mb-6">
+                  <div className="relative rounded-3xl overflow-hidden bg-slate-800 border border-slate-700 shadow-2xl" style={{ width: '480px', height: '270px' }}>
+                    {callState.videoPermission === "granted" ? (
+                      <>
+                        <video
+                          ref={localVideoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full h-full object-cover"
+                          style={{ transform: 'scaleX(-1)' }}
+                        />
+                        {!callState.isVideoOn && (
+                          <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
+                            <div className="text-center text-white">
+                              <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <VideoOff className="w-10 h-10 text-slate-400" />
                               </div>
+                              <p className="text-lg font-medium text-slate-300">Camera is off</p>
                             </div>
-                          )}
-                        </>
-                      ) : callState.videoPermission === "denied" ? (
-                        <div className="absolute inset-0 bg-slate-900 flex items-center justify-center">
-                          <div className="text-center text-white">
-                            <VideoOff className="w-16 h-16 text-white/60 mx-auto mb-4" />
-                            <p className="text-lg font-medium">
-                              Camera access denied
-                            </p>
-                            <p className="text-sm text-white/60">
-                              Please allow camera access in your browser
-                              settings
-                            </p>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 bg-slate-900 flex items-center justify-center">
-                          <div className="text-center text-white">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-                            <p className="text-lg font-medium">
-                              Requesting camera access...
-                            </p>
-                            <p className="text-sm text-white/60">
-                              Please allow camera access when prompted
-                            </p>
+                        )}
+                      </>
+                    ) : callState.videoPermission === "denied" ? (
+                      <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <VideoOff className="w-10 h-10 text-slate-400" />
                           </div>
+                          <p className="text-lg font-medium text-slate-300">Camera blocked</p>
+                          <p className="text-sm text-slate-400 mt-1">Allow camera access to continue</p>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-600 border-t-blue-500 mx-auto mb-4"></div>
+                          <p className="text-lg font-medium text-slate-300">Getting ready...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
 
-                {/* Audio/Video Controls */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Audio & Video Controls
-                  </h2>
-                  <div className="flex items-center justify-center space-x-6">
+                  {/* Controls overlay at bottom of video */}
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
                     <Button
                       onClick={toggleMute}
-                      size="lg"
-                      variant={
-                        callState.isMuted ||
-                        callState.audioPermission === "denied"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                      className={`rounded-full w-16 h-16 ${
-                        callState.isMuted ||
-                        callState.audioPermission === "denied"
-                          ? "bg-red-500 hover:bg-red-600 shadow-lg"
-                          : "bg-slate-200 hover:bg-slate-300 shadow-lg"
+                      size="sm"
+                      variant="ghost"
+                      className={`rounded-full w-12 h-12 ${
+                        callState.isMuted || callState.audioPermission === "denied"
+                          ? "bg-red-600 hover:bg-red-700 text-white"
+                          : "bg-slate-700 hover:bg-slate-600 text-white"
                       }`}
                       disabled={callState.audioPermission === "denied"}
                     >
-                      {callState.isMuted ||
-                      callState.audioPermission === "denied" ? (
-                        <MicOff className="w-6 h-6" />
+                      {callState.isMuted || callState.audioPermission === "denied" ? (
+                        <MicOff className="w-5 h-5" />
                       ) : (
-                        <Mic className="w-6 h-6" />
+                        <Mic className="w-5 h-5" />
                       )}
                     </Button>
 
                     <Button
                       onClick={toggleVideo}
-                      size="lg"
-                      variant={
-                        !callState.isVideoOn ||
-                        callState.videoPermission === "denied"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                      className={`rounded-full w-16 h-16 ${
-                        !callState.isVideoOn ||
-                        callState.videoPermission === "denied"
-                          ? "bg-red-500 hover:bg-red-600 shadow-lg"
-                          : "bg-slate-200 hover:bg-slate-300 shadow-lg"
+                      size="sm"
+                      variant="ghost"
+                      className={`rounded-full w-12 h-12 ${
+                        !callState.isVideoOn || callState.videoPermission === "denied"
+                          ? "bg-red-600 hover:bg-red-700 text-white"
+                          : "bg-slate-700 hover:bg-slate-600 text-white"
                       }`}
                       disabled={callState.videoPermission === "denied"}
                     >
-                      {callState.isVideoOn &&
-                      callState.videoPermission === "granted" ? (
-                        <Video className="w-6 h-6" />
+                      {callState.isVideoOn && callState.videoPermission === "granted" ? (
+                        <Video className="w-5 h-5" />
                       ) : (
-                        <VideoOff className="w-6 h-6" />
+                        <VideoOff className="w-5 h-5" />
                       )}
                     </Button>
                   </div>
                 </div>
 
-                {/* Permission Status */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Device Status
-                  </h2>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-3 h-3 rounded-full ${
-                            callState.audioPermission === "granted"
-                              ? "bg-green-500"
-                              : callState.audioPermission === "denied"
-                              ? "bg-red-500"
-                              : "bg-yellow-500"
-                          }`}
-                        ></div>
-                        <span className="font-medium text-slate-900">
-                          Microphone
-                        </span>
-                      </div>
-                      <span
-                        className={`text-sm font-medium ${
-                          callState.audioPermission === "granted"
-                            ? "text-green-600"
-                            : callState.audioPermission === "denied"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                        }`}
-                      >
-                        {callState.audioPermission}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-3 h-3 rounded-full ${
-                            callState.videoPermission === "granted"
-                              ? "bg-green-500"
-                              : callState.videoPermission === "denied"
-                              ? "bg-red-500"
-                              : "bg-yellow-500"
-                          }`}
-                        ></div>
-                        <span className="font-medium text-slate-900">
-                          Camera
-                        </span>
-                      </div>
-                      <span
-                        className={`text-sm font-medium ${
-                          callState.videoPermission === "granted"
-                            ? "text-green-600"
-                            : callState.videoPermission === "denied"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                        }`}
-                      >
-                        {callState.videoPermission}
-                      </span>
-                    </div>
+                {/* Device Status */}
+                <div className="flex items-center justify-center space-x-8 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      callState.audioPermission === "granted" ? "bg-green-500" :
+                      callState.audioPermission === "denied" ? "bg-red-500" : "bg-yellow-500"
+                    }`}></div>
+                    <span className="text-slate-300">
+                      {callState.audioPermission === "granted" ? "Mic ready" :
+                       callState.audioPermission === "denied" ? "Mic blocked" : "Getting mic..."}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      callState.videoPermission === "granted" ? "bg-green-500" :
+                      callState.videoPermission === "denied" ? "bg-red-500" : "bg-yellow-500"
+                    }`}></div>
+                    <span className="text-slate-300">
+                      {callState.videoPermission === "granted" ? "Camera ready" :
+                       callState.videoPermission === "denied" ? "Camera blocked" : "Getting camera..."}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column - Room Info & Settings */}
-              <div className="space-y-8">
-                {/* Room Information */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Room Information
-                  </h2>
-                  <div className="bg-gradient-to-br from-blue-50 to-teal-50 border border-blue-200 rounded-2xl p-6">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm text-blue-700 mb-1">
-                          {callState.isCreatingRoom
-                            ? "Room Name (Generated)"
-                            : "Joining Room"}
-                        </div>
-                        <div className="font-bold text-blue-900 text-lg">
-                          {callState.roomName}
-                        </div>
-                      </div>
-                      {callState.isCreatingRoom && (
-                        <div className="space-y-3">
-                          <p className="text-sm text-blue-700">
-                            Share this room name with others to invite them
-                          </p>
-                          <Button
-                            onClick={copyRoomLink}
-                            size="sm"
-                            variant="outline"
-                            className="w-full bg-white border-blue-300 text-blue-700 hover:bg-blue-50"
-                          >
-                            <Copy className="w-4 h-4 mr-2" />
-                            Copy Room Link
-                          </Button>
-                          <div className="bg-white rounded-lg p-3 border border-blue-200">
-                            <p className="text-xs text-blue-600 font-mono break-all">
-                              {window.location.href}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+              {/* Right Side - Ready to Join */}
+              <div className="bg-white rounded-2xl p-8 shadow-2xl" style={{ minHeight: '400px' }}>
+                <div className="h-full flex flex-col justify-center">
+                  <div className="text-center mb-8">
+                    <h1 className="text-3xl font-bold text-slate-900 mb-3">
+                      Ready to join?
+                    </h1>
+                    <p className="text-slate-600 text-lg">
+                      {callState.isCreatingRoom 
+                        ? "You're about to create and join a new meeting"
+                        : "You're about to join this meeting"
+                      }
+                    </p>
                   </div>
-                </div>
 
-                {/* Participant Name */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Your Information
-                  </h2>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">
-                      Display Name
-                    </label>
+                  {/* Name Input */}
+                  <div className="mb-8">
                     <Input
                       value={callState.participantName || participantName}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1087,53 +977,60 @@ const VideoCallPage = () => {
                           participantName: e.target.value,
                         }));
                       }}
-                      placeholder="Enter your name"
-                      className="h-12 text-base"
+                      placeholder="Your name"
+                      className="h-14 text-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg"
                     />
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="space-y-4">
+                  {/* Room Info for Created Rooms */}
+                  {callState.isCreatingRoom && (
+                    <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm text-blue-700 mb-1">Room ID</p>
+                          <p className="font-mono text-sm text-blue-900 truncate">{callState.roomName}</p>
+                        </div>
+                        <Button
+                          onClick={copyRoomLink}
+                          size="sm"
+                          variant="ghost"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex-shrink-0 ml-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Join Button */}
                   <Button
                     onClick={handleJoinFromSetup}
                     disabled={
                       !callState.participantName.trim() ||
-                      (callState.audioPermission === "denied" &&
-                        callState.videoPermission === "denied")
+                      (callState.audioPermission === "denied" && callState.videoPermission === "denied")
                     }
-                    className="w-full py-4 text-lg bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                    size="lg"
+                    className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Play className="w-5 h-5 mr-2" />
-                    {callState.isCreatingRoom
-                      ? "Create & Join Room"
-                      : "Join Room"}
+                    {callState.isCreatingRoom ? "Create & Join" : "Join now"}
                   </Button>
 
                   {/* Permission Warning */}
-                  {callState.audioPermission === "denied" &&
-                    callState.videoPermission === "denied" && (
-                      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                        <div className="flex items-start space-x-3">
-                          <Shield className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="text-red-700 font-medium">
-                              Permissions Required
-                            </p>
-                            <p className="text-red-600 text-sm mt-1">
-                              Please allow at least microphone or camera access
-                              to join the call.
-                            </p>
-                          </div>
+                  {callState.audioPermission === "denied" && callState.videoPermission === "denied" && (
+                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <Shield className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-red-700 text-sm font-medium">Camera and microphone blocked</p>
+                          <p className="text-red-600 text-xs mt-1">Please allow access to join the meeting</p>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
       </div>
     );
   }
@@ -1224,42 +1121,30 @@ const VideoCallPage = () => {
   // Show video call interface
   if (callState.currentStep === "call" && callState.isConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col">
+      <div className="min-h-screen bg-gray-900 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 bg-black/20 backdrop-blur-md border-b border-white/10">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-lg"></div>
-              <span className="text-white font-semibold text-lg">
-                Live Consultation
-              </span>
+        <div className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-white font-medium text-sm">AuraHealth Meeting</span>
             </div>
-            <div className="hidden md:flex items-center space-x-4 text-white/80">
-              <span className="text-sm">
-                Room:{" "}
-                <span className="font-mono text-blue-300">
-                  {callState.roomName}
-                </span>
-              </span>
-              <span className="text-sm">
-                You:{" "}
-                <span className="font-medium text-blue-300">
-                  {callState.participantName}
-                </span>
-              </span>
+            <div className="hidden md:flex items-center space-x-4 text-gray-300 text-xs">
+              <span>Meeting ID: <span className="font-mono text-gray-200">{callState.roomName}</span></span>
+              <span>Duration: <span className="text-green-400">{formatDuration(callState.callDuration)}</span></span>
               {isRecording && (
-                <div className="flex items-center space-x-2 text-green-400">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium">Recording Data</span>
+                <div className="flex items-center space-x-1 text-red-400">
+                  <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium">REC</span>
                 </div>
               )}
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
-              className="text-white/80 hover:text-white hover:bg-white/10 rounded-full w-10 h-10"
+              className="text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
               onClick={copyRoomLink}
             >
               <Share className="w-4 h-4" />
@@ -1267,14 +1152,14 @@ const VideoCallPage = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="text-white/80 hover:text-white hover:bg-white/10 rounded-full w-10 h-10"
+              className="text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
             >
               <Users className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="text-white/80 hover:text-white hover:bg-white/10 rounded-full w-10 h-10"
+              className="text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
             >
               <MessageSquare className="w-4 h-4" />
             </Button>
@@ -1282,209 +1167,206 @@ const VideoCallPage = () => {
         </div>
 
         {/* Main Video Area */}
-        <div className="flex-1 flex items-center justify-center p-6 relative">
-          <div className="relative w-full max-w-6xl aspect-video bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
-            {/* Remote Video (Main Screen) */}
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
+        <div className="flex-1 bg-gray-900 p-4">
+          <div className="h-full relative">
+            {/* Main Video Container */}
+            <div className="relative w-full h-full bg-black rounded-lg overflow-hidden shadow-2xl">
+              {/* Remote Video (Main Screen) */}
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
 
-            {/* Local Video (Picture-in-Picture) */}
-            <div className="absolute top-6 right-6 w-64 h-48 bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
-              {callState.videoPermission === "granted" ? (
-                <>
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                  {!callState.isVideoOn && (
-                    <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <VideoOff className="w-12 h-12 text-white/60 mx-auto mb-2" />
-                        <p className="text-sm font-medium">Camera off</p>
+              {/* Participant Name Overlay */}
+              <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm font-medium">
+                {callState.remoteParticipants.size > 0 
+                  ? Array.from(callState.remoteParticipants.values())[0]?.identity || "Participant"
+                  : "Waiting for participant..."
+                }
+              </div>
+
+              {/* Network Quality Indicator */}
+              <div className="absolute top-4 left-4 flex items-center space-x-2">
+                <div className="bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center space-x-1">
+                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                  <span>HD</span>
+                </div>
+              </div>
+
+              {/* Local Video (Picture-in-Picture) */}
+              <div className="absolute top-4 right-4 w-48 h-32 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600 shadow-lg">
+                {callState.videoPermission === "granted" ? (
+                  <>
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                      style={{ transform: 'scaleX(-1)' }}
+                    />
+                    {!callState.isVideoOn && (
+                      <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <VideoOff className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                          <p className="text-xs">Camera off</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="absolute inset-0 bg-slate-900 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <VideoOff className="w-12 h-12 text-white/60 mx-auto mb-2" />
-                    <p className="text-sm">No camera</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Connection Status */}
-            <div className="absolute top-6 left-6 bg-black/40 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-white text-sm font-medium">HD</span>
-              </div>
-            </div>
-
-            {/* Call Duration */}
-            <div className="absolute top-6 left-24 bg-black/40 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10">
-              <span className="text-white text-sm font-medium">
-                {formatDuration(callState.callDuration)}
-              </span>
-            </div>
-
-            {/* Network Status */}
-            <div className="absolute bottom-6 left-6 bg-black/40 backdrop-blur-md rounded-xl px-4 py-2 border border-white/10">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-white text-sm font-medium">Good</span>
-              </div>
-            </div>
-
-            {/* Face Analysis Widget - Only for Healthcare Provider analyzing patient */}
-            {callState.isCreatingRoom &&
-              remoteVideoRef.current &&
-              remoteVideoRef.current.srcObject && (
-                <div className="absolute bottom-6 right-6 max-w-sm">
-                  <div className="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-white/10">
-                    {remoteVideoRef && remoteVideoRef.current && (
-                      <FaceWidgets
-                        customVideoElement={remoteVideoRef.current}
-                      />
                     )}
+                  </>
+                ) : (
+                  <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <VideoOff className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                      <p className="text-xs">No camera</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Local participant name */}
+                <div className="absolute bottom-1 left-1 bg-black/70 text-white px-2 py-0.5 rounded text-xs">
+                  You
+                </div>
+              </div>
+
+              {/* Face Analysis Widget - Only for Healthcare Provider analyzing patient */}
+              {callState.isCreatingRoom &&
+                remoteVideoRef.current &&
+                remoteVideoRef.current.srcObject && (
+                  <div className="absolute bottom-4 right-4 max-w-xs">
+                    <div className="bg-black/80 backdrop-blur-sm rounded-lg p-3 border border-gray-600">
+                      <div className="text-white text-xs mb-2 font-medium">Patient Analysis</div>
+                      {remoteVideoRef && remoteVideoRef.current && (
+                        <FaceWidgets
+                          customVideoElement={remoteVideoRef.current}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              {/* Waiting State */}
+              {callState.remoteParticipants.size === 0 && (
+                <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-12 h-12 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">Waiting for others to join</h3>
+                    <p className="text-gray-400 max-w-sm mx-auto">
+                      Your meeting is ready. Share the meeting ID with participants.
+                    </p>
+                    <div className="mt-4 flex items-center justify-center space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: "0.3s" }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: "0.6s" }}></div>
+                    </div>
                   </div>
                 </div>
               )}
-
-            {/* Debug Info for Healthcare Provider */}
-            {callState.isCreatingRoom && (
-              <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-md rounded-lg p-2 text-xs text-white">
-                <div>Provider View (Analyzing Patient)</div>
-                <div>Remote Video: {remoteVideoRef.current ? "✅" : "❌"}</div>
-                <div>
-                  Stream: {remoteVideoRef.current?.srcObject ? "✅" : "❌"}
-                </div>
-                <div>
-                  Widget:{" "}
-                  {callState.isCreatingRoom && remoteVideoRef.current?.srcObject
-                    ? "✅"
-                    : "❌"}
-                </div>
-              </div>
-            )}
-
-            {/* Remote Participant Info */}
-            {callState.remoteParticipants.size === 0 && (
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-                <div className="text-center text-white">
-                  <div className="w-32 h-32 bg-gradient-to-br from-blue-600/20 to-teal-600/20 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-white/10">
-                    <Users className="w-16 h-16 text-white/60" />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">
-                    Waiting for provider...
-                  </h3>
-                  <p className="text-white/60 text-lg max-w-md mx-auto">
-                    Your healthcare provider will join shortly. Please ensure
-                    your audio and video are working properly.
-                  </p>
-                  <div className="mt-6 flex items-center justify-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                    <div
-                      className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.1s" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
         {/* Control Bar */}
-        <div className="flex items-center justify-center p-8 bg-black/20 backdrop-blur-md border-t border-white/10">
-          <div className="flex items-center space-x-6">
+        <div className="bg-gray-800 px-6 py-4 border-t border-gray-700">
+          <div className="flex items-center justify-center space-x-4">
             {/* Mute Button */}
             <Button
               onClick={toggleMute}
-              size="lg"
-              variant={
+              size="sm"
+              className={`rounded-full w-12 h-12 transition-all duration-200 ${
                 callState.isMuted || callState.audioPermission === "denied"
-                  ? "destructive"
-                  : "secondary"
-              }
-              className={`rounded-full w-16 h-16 ${
-                callState.isMuted || callState.audioPermission === "denied"
-                  ? "bg-red-500 hover:bg-red-600 shadow-lg"
-                  : "bg-white/20 hover:bg-white/30 shadow-lg"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-gray-600 hover:bg-gray-500 text-white"
               }`}
               disabled={callState.audioPermission === "denied"}
             >
               {callState.isMuted || callState.audioPermission === "denied" ? (
-                <MicOff className="w-7 h-7 text-white" />
+                <MicOff className="w-5 h-5" />
               ) : (
-                <Mic className="w-7 h-7 text-white" />
+                <Mic className="w-5 h-5" />
               )}
             </Button>
 
             {/* Video Toggle Button */}
             <Button
               onClick={toggleVideo}
-              size="lg"
-              variant={
+              size="sm"
+              className={`rounded-full w-12 h-12 transition-all duration-200 ${
                 !callState.isVideoOn || callState.videoPermission === "denied"
-                  ? "destructive"
-                  : "secondary"
-              }
-              className={`rounded-full w-16 h-16 ${
-                !callState.isVideoOn || callState.videoPermission === "denied"
-                  ? "bg-red-500 hover:bg-red-600 shadow-lg"
-                  : "bg-white/20 hover:bg-white/30 shadow-lg"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-gray-600 hover:bg-gray-500 text-white"
               }`}
               disabled={callState.videoPermission === "denied"}
             >
-              {callState.isVideoOn &&
-              callState.videoPermission === "granted" ? (
-                <Video className="w-7 h-7 text-white" />
+              {callState.isVideoOn && callState.videoPermission === "granted" ? (
+                <Video className="w-5 h-5" />
               ) : (
-                <VideoOff className="w-7 h-7 text-white" />
+                <VideoOff className="w-5 h-5" />
               )}
+            </Button>
+
+            {/* Share Screen Button */}
+            <Button
+              size="sm"
+              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+            >
+              <Share className="w-5 h-5" />
+            </Button>
+
+            {/* Participants Button */}
+            <Button
+              size="sm"
+              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+            >
+              <Users className="w-5 h-5" />
+            </Button>
+
+            {/* Chat Button */}
+            <Button
+              size="sm"
+              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+            >
+              <MessageSquare className="w-5 h-5" />
+            </Button>
+
+            {/* Settings Button */}
+            <Button
+              size="sm"
+              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+            >
+              <Settings className="w-5 h-5" />
             </Button>
 
             {/* End Call Button */}
             <Button
               onClick={endCall}
-              size="lg"
-              variant="destructive"
-              className="rounded-full w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-xl hover:shadow-2xl transition-all duration-200"
+              size="sm"
+              className="rounded-full w-14 h-12 bg-red-600 hover:bg-red-700 text-white transition-all duration-200 ml-4"
             >
-              <PhoneOff className="w-8 h-8 text-white" />
+              <PhoneOff className="w-5 h-5" />
             </Button>
+          </div>
 
-            {/* Settings Button */}
-            <Button
-              size="lg"
-              variant="secondary"
-              className="rounded-full w-16 h-16 bg-white/20 hover:bg-white/30 shadow-lg"
-            >
-              <Settings className="w-7 h-7 text-white" />
-            </Button>
-
-            {/* More Options Button */}
-            <Button
-              size="lg"
-              variant="secondary"
-              className="rounded-full w-16 h-16 bg-white/20 hover:bg-white/30 shadow-lg"
-            >
-              <MoreVertical className="w-7 h-7 text-white" />
-            </Button>
+          {/* Additional Controls Row */}
+          <div className="flex items-center justify-center mt-3 space-x-6 text-xs text-gray-400">
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <span>Connection: Stable</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Users className="w-3 h-3" />
+              <span>Participants: {callState.remoteParticipants.size + 1}</span>
+            </div>
+            {callState.isCreatingRoom && (
+              <div className="flex items-center space-x-1">
+                <Brain className="w-3 h-3" />
+                <span>AI Analysis: Active</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
