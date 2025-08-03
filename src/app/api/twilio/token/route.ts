@@ -3,11 +3,11 @@ import Twilio from 'twilio';
 
 export async function POST(request: Request) {
   try {
-    const { identity, roomName } = await request.json();
+    const { participantName, roomName } = await request.json();
 
     // Validate the input from the client
-    if (!identity || typeof identity !== 'string') {
-      return NextResponse.json({ error: 'A valid "identity" string is required.' }, { status: 400 });
+    if (!participantName || typeof participantName !== 'string') {
+      return NextResponse.json({ error: 'A valid "participantName" string is required.' }, { status: 400 });
     }
     if (!roomName || typeof roomName !== 'string') {
       return NextResponse.json({ error: 'A valid "roomName" string is required.' }, { status: 400 });
@@ -15,8 +15,8 @@ export async function POST(request: Request) {
 
     // Retrieve your Twilio credentials from environment variables
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const apiKeySid = process.env.TWILIO_API_KEY_SID;
-    const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+    const apiKeySid = process.env.TWILIO_API_KEY;
+    const apiKeySecret = process.env.TWILIO_API_SECRET;
 
     if (!accountSid || !apiKeySid || !apiKeySecret) {
       console.error("Twilio environment variables are not set.");
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     // Create a new access token
     const accessToken = new AccessToken(accountSid, apiKeySid, apiKeySecret, {
-      identity: identity,
+      identity: participantName,
     });
 
     // Create a video grant for the specific room
