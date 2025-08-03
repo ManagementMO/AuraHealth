@@ -77,11 +77,14 @@ io.on('connection', (socket) => {
 
       // **THE CRITICAL CONNECTION STEP**
       // This contacts the Hume API and establishes a persistent WebSocket connection.
+      // This configuration tells Hume which models to initialize and have ready for this connection.
       const humeSocket = await hume.expressionMeasurement.stream.connect({
         config: {
-          // This configuration tells Hume which models to initialize and have ready for this connection.
+          burst: {},    // Prepares the burst model.
           face: {},     // Prepares the facial expression model.
+          facemesh: {}, // Prepares the face mesh model.
           language: {}, // Prepares the language model.
+          prosody: {}   // Prepares the prosody model.
         }
       });
 
@@ -118,9 +121,9 @@ io.on('connection', (socket) => {
         // The function only resumes when Hume has processed the image and sent the analysis back.
         // That analysis is the "response," which is then stored in the `result` variable.
         const result = await humeSocket.sendFile({
-          data: data.imageData.split(',')[1], // Base64 images from browsers include a prefix like "data:image/jpeg;base64,". This splits it off, sending only the raw data.
-          models: { face: {} } // Explicitly tells Hume to use the face model for this file.
-        });
+            data: data.imageData.split(',')[1],
+            models: { face: {}, facemesh: {} } // Example with multiple models
+          });
         // Now that we have the result, send it back to the client who requested it.
         socket.emit('emotion-data', result);
       } else if (data.type === 'text' && data.text) {
