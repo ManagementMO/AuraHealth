@@ -3,7 +3,8 @@
 // =========================================================================
 
 // Imports functionality from other libraries.
-import express, { Request, Response } from 'express'; // Imports Express, a web framework for creating servers and HTTP endpoints.
+import express from 'express'; // Imports Express, a web framework for creating servers and HTTP endpoints.
+import type { Request, Response } from 'express';
 import cors from 'cors'; // Imports CORS middleware to allow requests from different origins (e.g., your frontend at localhost:3000).
 import { createServer } from 'http'; // Imports Node.js's native HTTP module to create a server.
 import { Server } from 'socket.io'; // Imports Socket.IO, the library for real-time, bidirectional communication.
@@ -25,8 +26,9 @@ const server = createServer(app); // Creates an HTTP server using Node's 'http' 
 const io = new Server(server, {
   cors: { // Configures Cross-Origin Resource Sharing (CORS) for the Socket.IO connection.
     // This is crucial. It explicitly allows your frontend application (running on a different port/domain) to connect to this server.
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Allow connections from the URL specified in your .env file, or default to localhost:3000.
-    methods: ['GET', 'POST'] // Specifies which HTTP methods are allowed for the connection handshake.
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000"], // Allow connections from multiple localhost variants
+    methods: ['GET', 'POST'], // Specifies which HTTP methods are allowed for the connection handshake.
+    credentials: true
   }
 });
 
@@ -54,14 +56,35 @@ const hume = new HumeClient({
 // This allows you to associate each of your clients with their own private, persistent connection to Hume.
 const humeConnections = new Map<string, any>();
 
+// Store room information for broadcasting analysis results
+// Key: socket.id, Value: { roomName, userType }
+const clientRooms = new Map<string, { roomName: string; userType: 'doctor' | 'patient' }>();
+
 // =========================================================================
 // SECTION 5: CORE REAL-TIME LOGIC (SOCKET.IO)
 // =========================================================================
 
+// Add connection debugging
+io.engine.on("connection_error", (err) => {
+  console.log('Socket.IO connection error:', err.req);      // the request object
+  console.log('Error code:', err.code);     // the error code, for example 1
+  console.log('Error message:', err.message);  // the error message, for example "Session ID unknown"
+  console.log('Error context:', err.context);  // some additional error context
+});
+
 // This is the main event listener. The code inside this block runs every time a new client connects to your server via Socket.IO.
 io.on('connection', (socket) => {
   // `socket` is an object that represents the individual connection to one specific client.
-  console.log('Client connected:', socket.id); // Logs the unique ID of the newly connected client.
+  console.log('Client connected successfully:', socket.id); // Logs the unique ID of the newly connected client.
+
+  // --- Event Listener for 'join-room' ---
+  // This allows clients to join a specific room for broadcasting analysis results
+  socket.on('join-room', (data: { roomName: string; userType: 'doctor' | 'patient' }) => {
+    console.log(`Client ${socket.id} joining room ${data.roomName} as ${data.userType}`);
+    socket.join(data.roomName);
+    clientRooms.set(socket.id, data);
+    socket.emit('room-joined', { roomName: data.roomName });
+  });
 
   // --- Event Listener for 'start-analysis' ---
   // This block runs when the connected client sends a message with the event name 'start-analysis'.
@@ -105,6 +128,7 @@ io.on('connection', (socket) => {
   // --- Event Listener for 'analyze-frame' ---
   // This block runs when the client sends a frame of data (image, text, etc.) to be analyzed.
   socket.on('analyze-frame', async (data) => {
+    console.log(`[Analysis Server] Received frame from ${socket.id}, type: ${data.type}`);
     // 1. Retrieve the correct Hume connection for this specific client from the map.
     const humeSocket = humeConnections.get(socket.id);
     
@@ -120,16 +144,44 @@ io.on('connection', (socket) => {
         // `await` pauses the function here and sends the image data to Hume.
         // The function only resumes when Hume has processed the image and sent the analysis back.
         // That analysis is the "response," which is then stored in the `result` variable.
-        const result = await humeSocket.sendFile({
+        const result = await (humeSocket as any).sendFile({
             data: data.imageData.split(',')[1],
             models: { face: {}, facemesh: {} } // Example with multiple models
           });
-        // Now that we have the result, send it back to the client who requested it.
-        socket.emit('emotion-data', result);
+        
+        // Get the client's room information
+        const clientRoom = clientRooms.get(socket.id);
+        if (clientRoom) {
+          // Broadcast the analysis result to all clients in the same room
+          console.log(`[Analysis Server] Broadcasting analysis from ${clientRoom.userType} to room ${clientRoom.roomName}`);
+          console.log(`[Analysis Server] Analysis result:`, JSON.stringify(result, null, 2));
+          io.to(clientRoom.roomName).emit('emotion-data', {
+            ...result,
+            sourceClient: socket.id,
+            userType: clientRoom.userType
+          });
+        } else {
+          console.log(`[Analysis Server] No room found for ${socket.id}, sending to client only`);
+          // Fallback: send only to the requesting client
+          socket.emit('emotion-data', result);
+        }
       } else if (data.type === 'text' && data.text) {
         // The exact same request-response pattern for text.
-        const result = await humeSocket.sendText({ text: data.text });
-        socket.emit('emotion-data', result);
+        const result = await (humeSocket as any).sendText({ text: data.text });
+        
+        // Get the client's room information
+        const clientRoom = clientRooms.get(socket.id);
+        if (clientRoom) {
+          // Broadcast the analysis result to all clients in the same room
+          io.to(clientRoom.roomName).emit('emotion-data', {
+            ...result,
+            sourceClient: socket.id,
+            userType: clientRoom.userType
+          });
+        } else {
+          // Fallback: send only to the requesting client
+          socket.emit('emotion-data', result);
+        }
       }
       // ... this pattern would be repeated for audio data ...
     } catch (error) {
@@ -145,7 +197,7 @@ io.on('connection', (socket) => {
     const humeSocket = humeConnections.get(socket.id); // Find the connection.
     if (humeSocket) {
       try {
-        humeSocket.close(); // Gracefully close the WebSocket connection to Hume's servers.
+        (humeSocket as any).close(); // Gracefully close the WebSocket connection to Hume's servers.
       } catch (error) {
         console.error('Error closing Hume socket:', error);
       }
@@ -162,12 +214,15 @@ io.on('connection', (socket) => {
     const humeSocket = humeConnections.get(socket.id); // Find any existing Hume connection.
     if (humeSocket) {
       try {
-        humeSocket.close(); // Close it.
+        (humeSocket as any).close(); // Close it.
       } catch (error) {
         console.error('Error closing Hume socket on disconnect:', error);
       }
       humeConnections.delete(socket.id); // And remove it from the map.
     }
+    
+    // Clean up room information
+    clientRooms.delete(socket.id);
   });
 });
 

@@ -240,7 +240,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
           Emotional Wellness Assessment
         </CardTitle>
         <p className="text-center text-slate-600 mt-2">
-          Share how you've been feeling to help personalize your care
+          Share how you`&apos;`ve been feeling to help personalize your care
         </p>
       </CardHeader>
       <CardContent className="p-6 lg:p-8 space-y-8">
@@ -270,7 +270,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
                   How This Helps Your Care
                 </h3>
                 <p className="text-slate-700 text-lg leading-relaxed mb-4">
-                  Take 60 seconds to describe how you've been feeling physically
+                  Take 60 seconds to describe how you`&apos;`ve been feeling physically
                   and emotionally. Our AI will analyze your emotional state to
                   help your provider understand your well-being.
                 </p>
@@ -534,7 +534,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
                       Physical Health:
                     </p>
                     <ul className="space-y-1 text-left">
-                      <li>• Any symptoms you're experiencing</li>
+                      <li>• Any symptoms you`&apos;`re experiencing</li>
                       <li>• Changes in energy or sleep</li>
                       <li>• Pain or discomfort levels</li>
                     </ul>
