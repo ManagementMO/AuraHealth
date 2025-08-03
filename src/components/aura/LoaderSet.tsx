@@ -9,13 +9,23 @@ type LoaderProps = {
   numLevels: number;
 };
 
-export function LoaderSet({ className, emotions, emotionNames, numLevels }: LoaderProps) {
+export function LoaderSet({
+  className,
+  emotions,
+  emotionNames,
+  numLevels,
+}: LoaderProps) {
   className = className || "";
 
   return (
-    <div className={`${className}`}>
+    <div className={`${className} max-w-full overflow-hidden`}>
       {emotionNames.map((emotionName, i) => (
-        <Loader key={i} emotions={emotions} emotionName={emotionName} numLevels={numLevels} />
+        <Loader
+          key={i}
+          emotions={emotions}
+          emotionName={emotionName}
+          numLevels={numLevels}
+        />
       ))}
     </div>
   );

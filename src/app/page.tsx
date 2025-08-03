@@ -63,7 +63,6 @@ export default function Home() {
     // Hero elements staggered animation
     gsap.fromTo(
       [
-        trustBadgeRef.current,
         heroTitleRef.current,
         heroSubtitleRef.current,
         ctaButtonsRef.current,
@@ -351,19 +350,9 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="relative py-16 lg:py-24">
+      <section ref={heroRef} className="relative py-16 lg:py-24 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
-            {/* Trust Badge */}
-            <div
-              ref={trustBadgeRef}
-              className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-8"
-            >
-              <Shield className="w-4 h-4" />
-              <span>
-                HIPAA Compliant • Secure • Trusted by 10,000+ Patients
-              </span>
-            </div>
 
             <h1
               ref={heroTitleRef}
@@ -420,18 +409,6 @@ export default function Home() {
               ref={trustIndicatorsRef}
               className="flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500"
             >
-              <div className="flex items-center space-x-2">
-                <Lock className="w-4 h-4 text-emerald-600" />
-                <span>End-to-End Encrypted</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-blue-600" />
-                <span>HIPAA Compliant</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Award className="w-4 h-4 text-amber-600" />
-                <span>Medical Grade Security</span>
-              </div>
             </div>
           </div>
         </div>

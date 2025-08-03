@@ -6,31 +6,61 @@ type TopEmotionsProps = {
   numEmotions: number;
 };
 
-export function TopEmotions({ className, emotions, numEmotions }: TopEmotionsProps) {
+export function TopEmotions({
+  className,
+  emotions,
+  numEmotions,
+}: TopEmotionsProps) {
   className = className || "";
 
   return (
-    <div className={`${className}`}>
+    <div className={`${className} max-w-full overflow-hidden space-y-1`}>
       {emotions
         .sort((a: Emotion, b: Emotion) => b.score - a.score)
         .slice(0, numEmotions)
-        .map((emotion, i) => (
-          <div key={i} className="mb-3 flex rounded-full border border-neutral-200 text-sm shadow">
-            <div className="flex w-10 justify-center rounded-l-full bg-white py-2 pl-5 pr-4 font-medium text-neutral-800">
-              <span>{i + 1}</span>
+        .map((emotion, i) => {
+          const percentage = Math.round(emotion.score * 100);
+          const intensity = percentage > 70 ? 'high' : percentage > 40 ? 'medium' : 'low';
+          const barColor = percentage > 70 ? 'bg-green-500' : percentage > 40 ? 'bg-yellow-500' : 'bg-blue-500';
+          const bgColor = percentage > 70 ? 'bg-green-500/10' : percentage > 40 ? 'bg-yellow-500/10' : 'bg-blue-500/10';
+          
+          return (
+            <div
+              key={i}
+              className={`relative overflow-hidden rounded-lg border border-gray-500/30 ${bgColor} backdrop-blur-sm`}
+            >
+              {/* Progress bar background */}
+              <div className="absolute inset-0 flex">
+                <div 
+                  className={`${barColor} opacity-20 transition-all duration-300`}
+                  style={{ width: `${percentage}%` }}
+                ></div>
+              </div>
+              
+              {/* Content */}
+              <div className="relative flex items-center justify-between px-2 py-1.5 min-h-[28px]">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-4 h-4 rounded-full bg-gray-700/50 flex items-center justify-center border border-gray-500/30">
+                    <span className="text-xs font-bold text-gray-200">{i + 1}</span>
+                  </div>
+                  <span className="text-xs font-medium text-gray-200 lowercase truncate">
+                    {emotion.name}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5 flex-shrink-0">
+                  <div className={`w-1.5 h-1.5 rounded-full ${barColor}`}></div>
+                  <span className="text-xs font-bold text-gray-100 min-w-[28px] text-right">
+                    {percentage}%
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="w-48 bg-neutral-800 px-4 py-2 lowercase text-white">
-              <span>{emotion.name}</span>
-            </div>
-            <div className="flex w-20 justify-center rounded-r-full bg-white py-2 pr-4 pl-3 font-medium text-neutral-800">
-              <span>{emotion.score.toFixed(3)}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
     </div>
   );
 }
 
 TopEmotions.defaultProps = {
-  numEmotions: 3,
+  numEmotions: 2, // Reduced for compact video call display
 };

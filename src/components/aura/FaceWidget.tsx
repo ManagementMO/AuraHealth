@@ -346,25 +346,43 @@ export function FaceWidgets({
   }
 
   return (
-    <div>
-      <div className="md:flex">
-        <div>
+    <div className="w-full max-w-[320px] min-w-[280px] h-[400px] overflow-hidden">
+      <div className="space-y-2 h-full flex flex-col">
+        <div className="bg-black/95 backdrop-blur-md rounded-xl p-3 border border-gray-500/50 shadow-2xl flex-1 overflow-hidden flex flex-col">
           {!onCalibrate && (
             <>
-              <TopEmotions emotions={emotions} />
-              <LoaderSet
-                className="mt-8 ml-5"
-                emotionNames={loaderNames}
-                emotions={emotions}
-                numLevels={numLoaderLevels}
-              />
-              <Descriptor className="mt-8" emotions={emotions} />
+              <div className="flex-1 min-h-0">
+                <div className="text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wide">
+                  Emotion Analysis
+                </div>
+                <div className="h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-transparent">
+                  <TopEmotions emotions={emotions} numEmotions={8} />
+                </div>
+              </div>
+              
+              <div className="pt-2 mt-2 border-t border-gray-600/30 flex-shrink-0">
+                <div className="text-xs font-semibold text-gray-300 mb-1 uppercase tracking-wide">
+                  Overall State
+                </div>
+                <Descriptor
+                  className="text-sm text-gray-200"
+                  emotions={emotions}
+                />
+              </div>
             </>
           )}
         </div>
+
+        {status && (
+          <div className="bg-blue-900/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-blue-100 border border-blue-600/50 shadow-lg flex-shrink-0">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+              <span className="font-medium truncate">{status}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="pt-6">{status}</div>
       <canvas className="hidden" ref={photoRef}></canvas>
     </div>
   );

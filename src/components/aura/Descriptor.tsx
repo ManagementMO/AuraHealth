@@ -31,21 +31,25 @@ export function Descriptor({ className, emotions }: DescriptorProps) {
         break;
       }
     }
-    if (Math.abs(primaryEmotion.score - secondaryEmotion.score) > emotionDistThreshold) {
+    if (
+      Math.abs(primaryEmotion.score - secondaryEmotion.score) >
+      emotionDistThreshold
+    ) {
       return primaryEmotion.name;
     }
     return `${secondaryDescriptor} ${primaryEmotion.name}`;
   }
 
   return (
-    <div className={`${className} flex`}>
+    <div className={`${className}`}>
       {emotions.length > 0 && (
-        <div className="mb-3 flex rounded-full border border-neutral-200 text-sm shadow">
-          <div className="flex justify-center rounded-l-full bg-white py-2 px-3 font-medium text-neutral-800"></div>
-          <div className="w-48 bg-neutral-800 px-4 py-2 text-center lowercase text-white">
-            <span>{createDescription(stableEmotions)}</span>
+        <div className="bg-gradient-to-r from-gray-700/40 to-gray-600/40 rounded-lg px-3 py-2 border border-gray-500/20 backdrop-blur-sm">
+          <div className="flex items-center space-x-2">
+            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></div>
+            <div className="text-sm font-medium text-gray-100 capitalize truncate">
+              {createDescription(stableEmotions)}
+            </div>
           </div>
-          <div className="flex justify-center rounded-r-full bg-white py-2 px-3 font-medium text-neutral-800"></div>
         </div>
       )}
     </div>

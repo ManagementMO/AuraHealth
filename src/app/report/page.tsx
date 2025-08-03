@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, Download, ArrowLeft, Brain, CheckCircle, Clock, Heart } from "lucide-react";
+import {
+  FileText,
+  Download,
+  ArrowLeft,
+  Brain,
+  CheckCircle,
+  Clock,
+  Heart,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDataAggregation } from "@/contexts/DataAggregationContext";
@@ -97,15 +105,17 @@ export default function ReportPage() {
       const response = await fetch(pdfUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `patient-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `patient-report-${
+        new Date().toISOString().split("T")[0]
+      }.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error("Download failed:", error);
     }
   };
 
@@ -120,12 +130,16 @@ export default function ReportPage() {
                 <Heart className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">Patient Analysis Report</h1>
-                <p className="text-sm text-slate-500">AI-Generated Consultation Summary</p>
+                <h1 className="text-xl font-bold text-slate-900">
+                  Patient Analysis Report
+                </h1>
+                <p className="text-sm text-slate-500">
+                  AI-Generated Consultation Summary
+                </p>
               </div>
             </div>
             <Button
-              onClick={() => window.location.href = '/video-call'}
+              onClick={() => (window.location.href = "/video-call")}
               variant="ghost"
               className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
@@ -157,7 +171,8 @@ export default function ReportPage() {
                     Analyzing Patient Data
                   </h2>
                   <p className="text-slate-600 text-lg mb-8">
-                    Our AI is processing the consultation data and generating your comprehensive report...
+                    Our AI is processing the consultation data and generating
+                    your comprehensive report...
                   </p>
 
                   {/* Progress Indicators */}
@@ -179,8 +194,14 @@ export default function ReportPage() {
                   {/* Loading Animation */}
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                    <div
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
                   </div>
                 </div>
               </CardContent>
@@ -193,13 +214,11 @@ export default function ReportPage() {
                   <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-8">
                     <FileText className="w-10 h-10 text-red-600" />
                   </div>
-                  
+
                   <h2 className="text-2xl font-bold text-slate-900 mb-4">
                     Report Generation Failed
                   </h2>
-                  <p className="text-slate-600 text-lg mb-8">
-                    {error}
-                  </p>
+                  <p className="text-slate-600 text-lg mb-8">{error}</p>
 
                   <div className="space-y-3">
                     <Button
@@ -209,9 +228,9 @@ export default function ReportPage() {
                       <Brain className="w-4 h-4 mr-2" />
                       Try Again
                     </Button>
-                    
+
                     <Button
-                      onClick={() => window.location.href = '/video-call'}
+                      onClick={() => (window.location.href = "/video-call")}
                       variant="outline"
                       className="w-full h-12 border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all duration-200"
                     >
@@ -237,19 +256,28 @@ export default function ReportPage() {
                     Report Generated Successfully
                   </h2>
                   <p className="text-slate-600 text-lg mb-8">
-                    Your comprehensive patient analysis report is ready for review and download.
+                    Your comprehensive patient analysis report is ready for
+                    review and download.
                   </p>
 
                   {/* Report Info */}
                   <div className="bg-slate-50 rounded-xl p-6 mb-8 border border-slate-200">
                     <div className="grid grid-cols-2 gap-6 text-sm">
                       <div className="text-center">
-                        <div className="font-semibold text-slate-900 mb-1">Report Type</div>
-                        <div className="text-slate-600">AI Sentiment Analysis</div>
+                        <div className="font-semibold text-slate-900 mb-1">
+                          Report Type
+                        </div>
+                        <div className="text-slate-600">
+                          AI Sentiment Analysis
+                        </div>
                       </div>
                       <div className="text-center">
-                        <div className="font-semibold text-slate-900 mb-1">Generated</div>
-                        <div className="text-slate-600">{new Date().toLocaleDateString()}</div>
+                        <div className="font-semibold text-slate-900 mb-1">
+                          Generated
+                        </div>
+                        <div className="text-slate-600">
+                          {new Date().toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -274,7 +302,7 @@ export default function ReportPage() {
                     </Button>
 
                     <Button
-                      onClick={() => window.location.href = '/video-call'}
+                      onClick={() => (window.location.href = "/video-call")}
                       variant="ghost"
                       className="w-full h-12 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200"
                     >
@@ -293,7 +321,8 @@ export default function ReportPage() {
       <div className="flex-shrink-0 bg-white/50 border-t border-slate-200/50 px-6 py-4">
         <div className="max-w-4xl mx-auto">
           <p className="text-center text-slate-500 text-sm">
-            This report contains confidential patient information. Please handle according to your organization's privacy policies.
+            This report contains confidential patient information. Please handle
+            according to your organization's privacy policies.
           </p>
         </div>
       </div>

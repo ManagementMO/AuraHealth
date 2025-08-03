@@ -9,7 +9,12 @@ type LoaderProps = {
   numLevels: number;
 };
 
-export function Loader({ className, emotions, emotionName, numLevels }: LoaderProps) {
+export function Loader({
+  className,
+  emotions,
+  emotionName,
+  numLevels,
+}: LoaderProps) {
   className = className || "";
 
   if (emotions.length === 0) {
@@ -48,22 +53,28 @@ export function Loader({ className, emotions, emotionName, numLevels }: LoaderPr
   const scaledEmotions = scaleEmotionsToRanges(emotions);
   const level = getLevel(scaledEmotions);
   const indicators = getIndicators(level);
-  const emotionDisplayName = emotionName.includes("Surprise") ? "Surprise" : emotionName;
+  const emotionDisplayName = emotionName.includes("Surprise")
+    ? "Surprise"
+    : emotionName;
 
   return (
-    <div className={`flex items-center ${className}`}>
-      <div className="flex">
+    <div
+      className={`flex items-center justify-between ${className} mb-1 min-w-0 max-w-full`}
+    >
+      <div className="text-xs text-gray-300 truncate flex-1 mr-2 lowercase min-w-0">
+        <span className="block truncate">{emotionDisplayName}</span>
+      </div>
+      <div className="flex flex-shrink-0">
         {indicators.map((indicator, i) => {
-          const color = indicator ? "bg-neutral-800" : "bg-neutral-400";
+          const color = indicator ? "bg-blue-500" : "bg-gray-600";
           return (
             <div
               key={i}
-              className={`mr-1 resize-none rounded border border-neutral-300 pl-5 pt-5 text-sm text-white shadow ${color}`}
+              className={`w-2 h-2 rounded-full mr-1 last:mr-0 ${color} border border-gray-500`}
             ></div>
           );
         })}
       </div>
-      <div className="ml-2 font-medium lowercase">{emotionDisplayName}</div>
     </div>
   );
 }

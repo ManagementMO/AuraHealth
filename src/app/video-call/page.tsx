@@ -28,7 +28,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 
 // Twilio Video imports
 import {
@@ -106,9 +105,6 @@ const VideoCallPage = () => {
     } catch (error) {
       console.error("Audio permission denied:", error);
       setCallState((prev) => ({ ...prev, audioPermission: "denied" }));
-      toast.error("Audio permission denied", {
-        description: "Please allow microphone access to join the call.",
-      });
       return false;
     }
   };
@@ -122,9 +118,6 @@ const VideoCallPage = () => {
     } catch (error) {
       console.error("Video permission denied:", error);
       setCallState((prev) => ({ ...prev, videoPermission: "denied" }));
-      toast.error("Video permission denied", {
-        description: "Please allow camera access to join the call.",
-      });
       return false;
     }
   };
@@ -162,10 +155,6 @@ const VideoCallPage = () => {
       callState.audioPermission === "denied" &&
       callState.videoPermission === "denied"
     ) {
-      toast.error("Permissions required", {
-        description:
-          "Please grant at least audio or video permission to join the call.",
-      });
       return;
     }
 
@@ -314,7 +303,6 @@ const VideoCallPage = () => {
 
           // If no more remote participants, show call ended state
           if (newParticipants.size === 0) {
-            toast.info("Other participant has left the call");
             // Keep connected as false to show call ended state
             return {
               ...prev,
@@ -332,10 +320,6 @@ const VideoCallPage = () => {
         }
       });
 
-      toast.success("Connected to room", {
-        description: `Joined ${callState.roomName} as ${callState.participantName}`,
-      });
-
       // Start data aggregation when call connects
       startRecording();
     } catch (error) {
@@ -348,13 +332,11 @@ const VideoCallPage = () => {
 
       // Check if it's a permission error
       if (error instanceof Error && error.message.includes("permission")) {
-        toast.error("Permission error", {
-          description: "Please check your microphone and camera permissions.",
-        });
+        console.error(
+          "Permission error - please check microphone and camera permissions"
+        );
       } else {
-        toast.error("Connection failed", {
-          description: "Unable to join the video call. Please try again.",
-        });
+        console.error("Connection failed - unable to join the video call");
       }
     }
   };
@@ -364,7 +346,6 @@ const VideoCallPage = () => {
     if (callState.currentStep === "setup") {
       // Toggle mute in setup mode
       setCallState((prev) => ({ ...prev, isMuted: !prev.isMuted }));
-      toast(callState.isMuted ? "Microphone unmuted" : "Microphone muted");
       return;
     }
 
@@ -384,14 +365,12 @@ const VideoCallPage = () => {
     });
 
     setCallState((prev) => ({ ...prev, isMuted: !isCurrentlyMuted }));
-    toast(isCurrentlyMuted ? "Microphone unmuted" : "Microphone muted");
   };
 
   const toggleVideo = async () => {
     if (callState.currentStep === "setup") {
       // Toggle video in setup mode
       setCallState((prev) => ({ ...prev, isVideoOn: !prev.isVideoOn }));
-      toast(callState.isVideoOn ? "Camera turned off" : "Camera turned on");
       return;
     }
 
@@ -411,7 +390,6 @@ const VideoCallPage = () => {
     });
 
     setCallState((prev) => ({ ...prev, isVideoOn: !isCurrentlyVideoOn }));
-    toast(isCurrentlyVideoOn ? "Camera turned off" : "Camera turned on");
   };
 
   const endCall = () => {
@@ -423,7 +401,7 @@ const VideoCallPage = () => {
     console.log("Call ended. Data summary:", dataSummary);
 
     if (dataSummary.totalPoints > 0) {
-      toast.success(
+      console.log(
         `Call ended. Collected ${
           dataSummary.totalPoints
         } data points over ${Math.round(dataSummary.duration / 1000)}s`
@@ -449,7 +427,7 @@ const VideoCallPage = () => {
       // Keep other properties like isCreatingRoom to differentiate UI
     }));
 
-    toast.success("Call ended");
+    console.log("Call ended");
   };
 
   const copyRoomLink = () => {
@@ -457,7 +435,7 @@ const VideoCallPage = () => {
       window.location.origin
     }/video-call?room=${encodeURIComponent(callState.roomName)}`;
     navigator.clipboard.writeText(link);
-    toast.success("Room link copied to clipboard");
+    console.log("Room link copied to clipboard");
   };
 
   const handleJoinCall = () => {
@@ -528,7 +506,6 @@ const VideoCallPage = () => {
 
   const handleJoinFromSetup = () => {
     if (!callState.participantName.trim()) {
-      toast.error("Please enter your name");
       return;
     }
     setCallState((prev) => ({
@@ -616,9 +593,9 @@ const VideoCallPage = () => {
           !callState.isConnecting
         ) {
           setCallState((prev) => ({ ...prev, isJoining: false }));
-          toast.error("Connection timeout", {
-            description: "Please try joining the call again.",
-          });
+          console.error(
+            "Connection timeout - please try joining the call again"
+          );
         }
       }, 10000); // 10 second timeout
 
@@ -1068,13 +1045,12 @@ const VideoCallPage = () => {
     callState.isConnecting
   ) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
             <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-white/30 border-t-white"></div>
             </div>
-            <div className="absolute inset-0 w-24 h-24 bg-gradient-to-r from-blue-600 to-teal-600 rounded-full opacity-20 animate-ping"></div>
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">
             Connecting to call...
@@ -1130,7 +1106,6 @@ const VideoCallPage = () => {
               <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
                 <PhoneOff className="w-12 h-12 text-white" />
               </div>
-              <div className="absolute inset-0 w-24 h-24 bg-red-600 rounded-full opacity-20 animate-ping"></div>
             </div>
 
             {/* Title and Description */}
@@ -1188,7 +1163,7 @@ const VideoCallPage = () => {
                 <div className="space-y-3">
                   <Button
                     onClick={() => {
-                      toast.success("Redirecting to patient report...");
+                      console.log("Redirecting to patient report...");
                       setTimeout(() => {
                         router.push("/report");
                       }, 1000);
@@ -1307,7 +1282,7 @@ const VideoCallPage = () => {
               </span>
               {isRecording && (
                 <div className="flex items-center space-x-1 text-red-400">
-                  <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
+                  <div className="w-1.5 h-1.5 bg-red-400 rounded-full"></div>
                   <span className="text-xs font-medium">REC</span>
                 </div>
               )}
@@ -1360,50 +1335,6 @@ const VideoCallPage = () => {
                   : "Waiting for participant..."}
               </div>
 
-              {/* Network Quality Indicator */}
-              <div className="absolute top-3 left-3 flex items-center space-x-2">
-                <div className="bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center space-x-1">
-                  <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-                  <span>HD</span>
-                </div>
-              </div>
-
-              {/* Local Video (Picture-in-Picture) */}
-              <div className="absolute top-3 right-3 w-40 h-24 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600 shadow-lg">
-                {callState.videoPermission === "granted" ? (
-                  <>
-                    <video
-                      ref={localVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                      style={{ transform: "scaleX(-1)" }}
-                    />
-                    {!callState.isVideoOn && (
-                      <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                        <div className="text-center text-white">
-                          <VideoOff className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                          <p className="text-xs">Camera off</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <VideoOff className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                      <p className="text-xs">No camera</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Local participant name */}
-                <div className="absolute bottom-1 left-1 bg-black/70 text-white px-1 py-0.5 rounded text-xs">
-                  You
-                </div>
-              </div>
-
               {/* Face Analysis Widget - Only for Healthcare Provider analyzing patient */}
               {callState.isCreatingRoom &&
                 remoteVideoRef.current &&
@@ -1437,13 +1368,13 @@ const VideoCallPage = () => {
                       participants.
                     </p>
                     <div className="mt-3 flex items-center justify-center space-x-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <div
-                        className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                        className="w-2 h-2 bg-blue-500 rounded-full"
                         style={{ animationDelay: "0.3s" }}
                       ></div>
                       <div
-                        className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                        className="w-2 h-2 bg-blue-500 rounded-full"
                         style={{ animationDelay: "0.6s" }}
                       ></div>
                     </div>
@@ -1534,24 +1465,6 @@ const VideoCallPage = () => {
             >
               <PhoneOff className="w-4 h-4" />
             </Button>
-          </div>
-
-          {/* Additional Controls Row */}
-          <div className="flex items-center justify-center mt-2 space-x-4 text-xs text-gray-400">
-            <div className="flex items-center space-x-1">
-              <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
-              <span>Connection: Stable</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Users className="w-3 h-3" />
-              <span>Participants: {callState.remoteParticipants.size + 1}</span>
-            </div>
-            {callState.isCreatingRoom && (
-              <div className="flex items-center space-x-1">
-                <Brain className="w-3 h-3" />
-                <span>AI Analysis: Active</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
