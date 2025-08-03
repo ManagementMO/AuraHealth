@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { Hume } from "@/contexts/HumeContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,8 +32,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased bg-neutral-50 text-neutral-900`}
       >
-        {children}
-        <Toaster />
+        <Hume>
+          {children}
+          <Toaster />
+        </Hume>
       </body>
     </html>
   );
