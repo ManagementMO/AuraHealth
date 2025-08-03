@@ -776,7 +776,7 @@ const VideoCallPage = () => {
                     <div className="space-y-6">
                       <div className="text-center space-y-4">
                         <p className="text-slate-600">
-                          Choose how you'd like to join a video call
+                          Choose how you&apos;d like to join a video call
                         </p>
                       </div>
 

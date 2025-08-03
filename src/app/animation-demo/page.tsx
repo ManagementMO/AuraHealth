@@ -277,7 +277,7 @@ const AnimationDemo = () => {
               </div>
               <h3 className="font-semibold mb-2">Performance</h3>
               <p className="text-gray-600 text-sm">
-                60fps animations that don't impact app performance
+                60fps animations that don&apos;t impact app performance
               </p>
             </div>
           </div>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateReport } from '@/lib/utilities/gemini';
 import { generateTimestampedFilename } from '@/lib/utilities/pdfGenerator';
-import { mockJson } from '@/lib/utilities/mockJson';
 
 export async function POST(request: NextRequest) {
   try {

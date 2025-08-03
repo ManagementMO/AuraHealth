@@ -198,7 +198,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
     }, 1000);
 
     toast.success("Recording started", {
-      description: "Please describe how you've been feeling.",
+      description: "Please describe how you&apos;ve been feeling.",
       duration: 3000,
     });
   };
@@ -241,7 +241,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
           Emotional Wellness Assessment
         </CardTitle>
         <p className="text-center text-slate-600 mt-2">
-          Share how you've been feeling to help personalize your care
+          Share how you&apos;ve been feeling to help personalize your care
         </p>
       </CardHeader>
       <CardContent className="p-6 lg:p-8 space-y-8">
@@ -271,9 +271,9 @@ export function PatientCheckin({}: PatientCheckinProps) {
                   How This Helps Your Care
                 </h3>
                 <p className="text-slate-700 text-lg leading-relaxed mb-4">
-                  Take 60 seconds to describe how you've been feeling physically
-                  and emotionally. Our AI will analyze your emotional state to
-                  help your provider understand your well-being.
+                  Take 60 seconds to describe how you&apos;ve been feeling
+                  physically and emotionally. Our AI will analyze your emotional
+                  state to help your provider understand your well-being.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                   <div className="text-center">
@@ -368,7 +368,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
                   </div>
                   <div className="text-red-600 text-sm mb-6 leading-relaxed">
                     {checkinState.webcamError.includes("denied") &&
-                      'Please click the camera icon in your browser\'s address bar and select "Allow", then refresh this page.'}
+                      'Please click the camera icon in your browser&apos;s address bar and select "Allow", then refresh this page.'}
                     {checkinState.webcamError.includes("found") &&
                       "Please connect a camera device and refresh the page to continue with your assessment."}
                     {!checkinState.webcamError.includes("denied") &&
@@ -535,7 +535,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
                       Physical Health:
                     </p>
                     <ul className="space-y-1 text-left">
-                      <li>• Any symptoms you're experiencing</li>
+                      <li>• Any symptoms you&apos;re experiencing</li>
                       <li>• Changes in energy or sleep</li>
                       <li>• Pain or discomfort levels</li>
                     </ul>

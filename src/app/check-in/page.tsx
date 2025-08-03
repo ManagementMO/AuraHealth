@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default async function CheckInPage() {
   const accessToken = await getHumeAccessToken();
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Medical Header */}
@@ -88,9 +88,9 @@ export default async function CheckInPage() {
             </h1>
 
             <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              Help us prepare for your appointment by sharing how you've been
-              feeling. This secure assessment enables your healthcare provider
-              to deliver more personalized care.
+              Help us prepare for your appointment by sharing how you&apos;ve
+              been feeling. This secure assessment enables your healthcare
+              provider to deliver more personalized care.
             </p>
 
             {/* Trust Indicators */}
@@ -264,6 +264,5 @@ export default async function CheckInPage() {
     //     </div>
     //   </div>
     // </>
-
   );
 }
