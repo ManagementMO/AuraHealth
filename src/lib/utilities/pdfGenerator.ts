@@ -21,7 +21,7 @@ export async function generatePDF(
 ) {
   try {
     // Create the output directory if it doesn't exist
-    const filesDir = outputDir || path.join(__dirname, 'files');
+    const filesDir = outputDir || path.join(process.cwd(), 'src', 'lib', 'utilities', 'files');
     if (!fs.existsSync(filesDir)) {
       fs.mkdirSync(filesDir, { recursive: true });
     }
