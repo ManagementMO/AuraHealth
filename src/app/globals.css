@@ -347,3 +347,65 @@ html {
     border: 1px solid #000 !important;
   }
 }
+
+/* Emotion Display Styles */
+.emotion-container {
+  @apply bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-lg;
+  min-width: 280px;
+}
+
+.emotion-title {
+  @apply text-white text-sm font-semibold mb-3 text-center;
+}
+
+.emotion-item {
+  @apply flex items-center space-x-3 mb-2 last:mb-0;
+}
+
+.emotion-name {
+  @apply text-white text-xs font-medium min-w-[80px];
+}
+
+.emotion-bar {
+  @apply flex-1 h-2 bg-white/20 rounded-full overflow-hidden;
+}
+
+.emotion-fill {
+  @apply h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full transition-all duration-300 ease-out;
+}
+
+.emotion-score {
+  @apply text-white text-xs font-bold min-w-[35px] text-right;
+}
+
+/* Animation for emotion bars */
+.emotion-fill {
+  animation: emotionPulse 2s ease-in-out infinite;
+}
+
+@keyframes emotionPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .emotion-container {
+    min-width: 240px;
+    @apply p-3;
+  }
+  
+  .emotion-name {
+    min-width: 60px;
+    @apply text-xs;
+  }
+  
+  .emotion-score {
+    min-width: 30px;
+    @apply text-xs;
+  }
+}

@@ -1,14 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useRef } from 'react';
-import Video, { LocalVideoTrack, RemoteParticipant, Room } from 'twilio-video';
-import { io, Socket } from 'socket.io-client';
-import { toast } from 'sonner';
+import { useEffect, useState, useRef } from "react";
+import Video, { LocalVideoTrack, RemoteParticipant, Room } from "twilio-video";
+import { io, Socket } from "socket.io-client";
+import { toast } from "sonner";
 
 // (Participant component can remain the same as the previous version)
-function Participant({ participant }: { participant: any }) { /* ... */ }
+function Participant({ participant }: { participant: any }) {
+  /* ... */
+}
 
-export function LiveCallView({ roomName, userIdentity }: { roomName: string, userIdentity: 'doctor' | 'patient' }) {
+export function LiveCallView({
+  roomName,
+  userIdentity,
+}: {
+  roomName: string;
+  userIdentity: "doctor" | "patient";
+}) {
   const [room, setRoom] = useState<Room | null>(null);
   const [participants, setParticipants] = useState<RemoteParticipant[]>([]);
   const [analysisData, setAnalysisData] = useState<any>(null);
@@ -17,16 +25,19 @@ export function LiveCallView({ roomName, userIdentity }: { roomName: string, use
 
   useEffect(() => {
     // Connect to our custom Analysis Relay Server
-    socketRef.current = io('http://localhost:3001');
+    socketRef.current = io("http://localhost:3001");
 
-    socketRef.current.on('connect', () => {
-      console.log('Connected to analysis relay server.');
-      socketRef.current?.emit('join-call-room', { roomName, userType: userIdentity });
+    socketRef.current.on("connect", () => {
+      console.log("Connected to analysis relay server.");
+      socketRef.current?.emit("join-call-room", {
+        roomName,
+        userType: userIdentity,
+      });
     });
 
     // DOCTOR: Listen for analysis updates
-    if (userIdentity === 'doctor') {
-      socketRef.current.on('analysis-update-from-server', (data) => {
+    if (userIdentity === "doctor") {
+      socketRef.current.on("analysis-update-from-server", (data) => {
         setAnalysisData(data);
       });
     }
@@ -34,16 +45,22 @@ export function LiveCallView({ roomName, userIdentity }: { roomName: string, use
     // Connect to Twilio
     const connectToTwilio = async () => {
       // ... (Twilio token fetching logic remains the same)
-      const response = await fetch('/api/twilio/token', { /* ... */ });
+      const response = await fetch("/api/twilio/token", {
+        /* ... */
+      });
       const { token } = await response.json();
-      const twilioRoom = await Video.connect(token, { /* ... */ });
-      
+      const twilioRoom = await Video.connect(token, {
+        /* ... */
+      });
+
       setRoom(twilioRoom);
       // ... (participant connection logic remains the same)
 
       // PATIENT: Start streaming media to our server
-      if (userIdentity === 'patient') {
-        const localVideoTrack = Array.from(twilioRoom.localParticipant.videoTracks.values())[0]?.track;
+      if (userIdentity === "patient") {
+        const localVideoTrack = Array.from(
+          twilioRoom.localParticipant.videoTracks.values()
+        )[0]?.track;
         if (localVideoTrack) {
           startStreamingPatientMedia(localVideoTrack);
         }
@@ -63,7 +80,9 @@ export function LiveCallView({ roomName, userIdentity }: { roomName: string, use
   const startStreamingPatientMedia = (videoTrack: LocalVideoTrack) => {
     // Create a new MediaStream from the Twilio video track
     const stream = new MediaStream([videoTrack.mediaStreamTrack]);
-    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+    mediaRecorderRef.current = new MediaRecorder(stream, {
+      mimeType: "video/webm;codecs=vp8",
+    });
 
     mediaRecorderRef.current.ondataavailable = async (event) => {
       if (event.data.size > 0 && socketRef.current) {
@@ -72,8 +91,8 @@ export function LiveCallView({ roomName, userIdentity }: { roomName: string, use
         reader.onloadend = () => {
           const base64data = reader.result as string;
           // Send the raw base64 data (without the 'data:...' prefix)
-          socketRef.current?.emit('stream-media-to-server', { 
-            videoChunk: base64data.split(',')[1] 
+          socketRef.current?.emit("stream-media-to-server", {
+            videoChunk: base64data.split(",")[1],
           });
         };
       }
@@ -90,7 +109,7 @@ export function LiveCallView({ roomName, userIdentity }: { roomName: string, use
       <div className="flex-grow p-4"> {/* ... */} </div>
 
       {/* Doctor's Empathy Dashboard (UI to display analysisData) */}
-      {userIdentity === 'doctor' && (
+      {userIdentity === "doctor" && (
         <div className="w-80 bg-neutral-800 p-4">
           <h2 className="text-lg font-bold mb-4">Empathy Dashboard</h2>
           {analysisData?.face ? (
@@ -100,9 +119,10 @@ export function LiveCallView({ roomName, userIdentity }: { roomName: string, use
                 .sort((a: any, b: any) => b.score - a.score)
                 .slice(0, 5) // Show top 5 emotions
                 .map((emo: any) => (
-                  <p key={emo.name}>{emo.name}: {emo.score.toFixed(2)}</p>
-                ))
-              }
+                  <p key={emo.name}>
+                    {emo.name}: {emo.score.toFixed(2)}
+                  </p>
+                ))}
             </div>
           ) : (
             <p className="text-neutral-400">Awaiting patient analysis...</p>
