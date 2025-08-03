@@ -4,7 +4,8 @@ import { generatePDF, convertTextToHTML, generateTimestampedFilename } from "./p
 import { mockJson } from "./mockJson";
 
 // const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_KEY = "AIzaSyACVWXJ-W0cCcAakiRfGqG9O-kN9RT2r9k";
+// const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = 'AIzaSyBV6Stqb93oXaJh0UNlOwnY1cC8hpOtOBE';
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
@@ -38,5 +39,3 @@ export async function generateReport(data: any, filename?: string) {
     throw error;
   }
 }
-
-generateReport(mockJson);

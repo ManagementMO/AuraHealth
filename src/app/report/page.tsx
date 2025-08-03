@@ -23,7 +23,7 @@ export default function ReportPage() {
   const [isGenerating, setIsGenerating] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { getAggregatedData } = useDataAggregation();
+  const { getAggregatedData, getDataSummary } = useDataAggregation();
 
   useEffect(() => {
     generateReportAndDisplay();
@@ -33,25 +33,112 @@ export default function ReportPage() {
   const convertAggregatedDataToReportFormat = (aggregatedData: any[]) => {
     if (aggregatedData.length === 0) {
       // Fallback to mock data if no aggregated data is available
+      console.warn("No aggregated data available, using mock data");
       return mockJson;
     }
 
     const now = new Date();
     const consultationDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Yesterday
 
-    const conversation_metrics = aggregatedData.map((dataPoint) => ({
-      timestamp: dataPoint.timestamp,
-      text_snippet: "Face analysis data point", // Placeholder since we don't have text
-      emotions: dataPoint.emotions,
+    // Calculate overall sentiment metrics from the aggregated emotion data
+    const emotionTotals: { [key: string]: number } = {};
+    const emotionCounts: { [key: string]: number } = {};
+    let totalDataPoints = 0;
+
+    aggregatedData.forEach((dataPoint) => {
+      totalDataPoints++;
+      dataPoint.emotions.forEach((emotion: any) => {
+        if (!emotionTotals[emotion.name]) {
+          emotionTotals[emotion.name] = 0;
+          emotionCounts[emotion.name] = 0;
+        }
+        emotionTotals[emotion.name] += emotion.score;
+        emotionCounts[emotion.name] += 1;
+      });
+    });
+
+    // Calculate average emotion scores
+    const averageEmotions = Object.keys(emotionTotals).map((name) => ({
+      name,
+      averageScore: emotionTotals[name] / emotionCounts[name],
+      frequency: emotionCounts[name],
     }));
 
+    // Sort by average score to get top emotions
+    const topEmotions = averageEmotions
+      .sort((a, b) => b.averageScore - a.averageScore)
+      .slice(0, 10);
+
+    // Determine overall sentiment based on top emotions
+    const positiveEmotions = ['joy', 'contentment', 'satisfaction', 'calmness', 'interest', 'excitement'];
+    const negativeEmotions = ['anxiety', 'sadness', 'fear', 'distress', 'anger', 'disgust'];
+    const neutralEmotions = ['confusion', 'concentration', 'contemplation', 'surprise'];
+
+    let positiveScore = 0;
+    let negativeScore = 0;
+    let neutralScore = 0;
+
+    topEmotions.forEach((emotion) => {
+      if (positiveEmotions.includes(emotion.name.toLowerCase())) {
+        positiveScore += emotion.averageScore;
+      } else if (negativeEmotions.includes(emotion.name.toLowerCase())) {
+        negativeScore += emotion.averageScore;
+      } else {
+        neutralScore += emotion.averageScore;
+      }
+    });
+
+    // Determine overall sentiment
+    let overallSentiment = "Neutral";
+    if (positiveScore > negativeScore && positiveScore > neutralScore) {
+      overallSentiment = "Positive";
+    } else if (negativeScore > positiveScore) {
+      overallSentiment = "Anxious/Concerned";
+    }
+
+    const conversation_metrics = aggregatedData.map((dataPoint, index) => ({
+      timestamp: dataPoint.timestamp,
+      text_snippet: `Patient emotional state analysis at ${dataPoint.timestamp}`,
+      emotions: dataPoint.emotions,
+      dominant_emotion: dataPoint.emotions.length > 0 
+        ? dataPoint.emotions.reduce((prev: any, current: any) => 
+            (prev.score > current.score) ? prev : current
+          ).name 
+        : "neutral",
+    }));
+
+    // Generate insights based on emotion patterns
+    const insights = [];
+    if (topEmotions.length > 0) {
+      insights.push(`Primary emotion detected: ${topEmotions[0].name} (${Math.round(topEmotions[0].averageScore * 100)}% confidence)`);
+    }
+    if (topEmotions.length > 1) {
+      insights.push(`Secondary emotion: ${topEmotions[1].name} (${Math.round(topEmotions[1].averageScore * 100)}% confidence)`);
+    }
+    insights.push(`Total data points analyzed: ${totalDataPoints}`);
+    insights.push(`Consultation duration: ${aggregatedData.length > 0 ? Math.round(aggregatedData.length * 2 / 60) : 0} minutes`);
+
     return {
-      patientId: `P${Math.floor(Math.random() * 1000)}-${Math.floor(
-        Math.random() * 100
-      )}`,
+      patientId: `P${Math.floor(Math.random() * 1000)}-${Math.floor(Math.random() * 100)}`,
       consultationDate: consultationDate.toISOString().split("T")[0],
       analysisDate: now.toISOString().split("T")[0],
+      overallSentiment,
+      emotionalTone: `${overallSentiment} with ${topEmotions[0]?.name || 'neutral'} undertones`,
+      confidenceLevel: topEmotions[0]?.averageScore || 0.5,
+      keyInsights: insights,
+      topEmotions: topEmotions.slice(0, 5),
+      totalDataPoints,
       conversation_metrics,
+      sentiment_summary: {
+        positive_score: positiveScore,
+        negative_score: negativeScore,
+        neutral_score: neutralScore,
+        dominant_sentiment: overallSentiment,
+        emotion_distribution: topEmotions.reduce((acc: any, emotion) => {
+          acc[emotion.name] = Math.round(emotion.averageScore * 100);
+          return acc;
+        }, {}),
+      },
     };
   };
 
@@ -62,25 +149,39 @@ export default function ReportPage() {
 
       // Get aggregated data from the context
       const aggregatedData = getAggregatedData();
+      const dataSummary = getDataSummary();
 
-      // Log and validate the aggregated data
-      console.log("Retrieved aggregated data for report generation");
+      // Log detailed information about the aggregated data
+      console.log("Retrieved aggregated data for report generation:");
+      console.log(`- Total data points: ${aggregatedData.length}`);
+      console.log(`- Data summary:`, dataSummary);
+      console.log(`- Sample data point:`, aggregatedData[0]);
+      
       logAggregatedData(aggregatedData);
 
       if (!validateAggregatedData(aggregatedData)) {
         console.warn("Invalid aggregated data detected, using fallback");
       }
 
+      // Check if we have meaningful sentiment data
+      if (aggregatedData.length === 0) {
+        console.warn("No sentiment data collected during consultation - using mock data for demonstration");
+      } else {
+        console.log(`Processing ${aggregatedData.length} sentiment data points from consultation`);
+      }
+
       // Convert aggregated data to the format expected by the report API
       const reportData = convertAggregatedDataToReportFormat(aggregatedData);
 
-      // Call the API to generate the PDF
+      console.log("Sending report data:", reportData);
+
+      // Call the API to generate the PDF with the actual aggregated data
       const response = await fetch("/api/generate-call-report", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(mockJson),
+        body: JSON.stringify(reportData), // Use actual aggregated data instead of mockJson
       });
 
       const result = await response.json();
@@ -174,26 +275,26 @@ export default function ReportPage() {
 
                   {/* Loading Text */}
                   <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                    Analyzing Patient Data
+                    Processing Patient Sentiment Analysis
                   </h2>
                   <p className="text-slate-600 text-lg mb-8">
-                    Our AI is processing the consultation data and generating
-                    your comprehensive report...
+                    Analyzing emotional patterns and generating comprehensive 
+                    insights from the consultation data...
                   </p>
 
                   {/* Progress Indicators */}
                   <div className="space-y-4 mb-8">
                     <div className="flex items-center justify-center space-x-3 text-sm text-slate-500">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Emotional patterns analyzed</span>
+                      <span>Patient emotion data collected</span>
                     </div>
                     <div className="flex items-center justify-center space-x-3 text-sm text-slate-500">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Behavioral insights extracted</span>
+                      <span>Sentiment patterns analyzed</span>
                     </div>
                     <div className="flex items-center justify-center space-x-3 text-sm text-slate-500">
                       <Clock className="w-4 h-4 text-blue-500 animate-spin" />
-                      <span>Generating PDF report...</span>
+                      <span>Generating clinical report...</span>
                     </div>
                   </div>
 

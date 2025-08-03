@@ -406,6 +406,16 @@ const VideoCallPage = () => {
           dataSummary.totalPoints
         } data points over ${Math.round(dataSummary.duration / 1000)}s`
       );
+      
+      // Log top emotions for immediate feedback
+      if (dataSummary.topEmotions.length > 0) {
+        console.log("Top patient emotions during consultation:");
+        dataSummary.topEmotions.forEach((emotion, index) => {
+          console.log(`${index + 1}. ${emotion.name}: ${Math.round(emotion.averageScore * 100)}%`);
+        });
+      }
+    } else {
+      console.warn("No sentiment data was collected during the consultation");
     }
 
     // Clean up analysis video element
@@ -1144,14 +1154,46 @@ const VideoCallPage = () => {
                 </div>
               </div>
 
-              {callState.isCreatingRoom && isRecording && (
+              {callState.isCreatingRoom && (
                 <div className="mt-4 pt-4 border-t border-gray-700">
-                  <div className="flex items-center justify-center space-x-2 text-green-400">
-                    <Brain className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      AI Analysis Completed
-                    </span>
-                  </div>
+                  {(() => {
+                    const dataSummary = getDataSummary();
+                    if (dataSummary.totalPoints > 0) {
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-center space-x-2 text-green-400">
+                            <Brain className="w-4 h-4" />
+                            <span className="text-sm font-medium">
+                              Patient Sentiment Analysis Complete
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                              <div className="text-lg font-bold text-purple-400">
+                                {dataSummary.totalPoints}
+                              </div>
+                              <div className="text-gray-400 text-xs">Data Points</div>
+                            </div>
+                            <div>
+                              <div className="text-lg font-bold text-orange-400">
+                                {dataSummary.topEmotions[0]?.name || 'N/A'}
+                              </div>
+                              <div className="text-gray-400 text-xs">Primary Emotion</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="flex items-center justify-center space-x-2 text-yellow-400">
+                          <Brain className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            Limited sentiment data collected
+                          </span>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
               )}
             </div>
