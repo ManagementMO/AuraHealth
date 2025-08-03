@@ -7,9 +7,11 @@ export async function POST(request: NextRequest) {
   try {
     // Create the filename first
     const pdfFilename = generateTimestampedFilename('patient-sentiment-report');
+
+    const json = await request.json();
     
     // Generate the PDF using the existing function with the filename
-    await generateReport(mockJson, pdfFilename);
+    await generateReport(json, pdfFilename);
     
     return NextResponse.json({ 
       success: true, 

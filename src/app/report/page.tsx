@@ -24,6 +24,7 @@ export default function ReportPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify(mockJson),
       });
 
       const result = await response.json();
