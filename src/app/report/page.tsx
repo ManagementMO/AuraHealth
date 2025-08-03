@@ -75,12 +75,12 @@ export default function ReportPage() {
       const reportData = convertAggregatedDataToReportFormat(aggregatedData);
 
       // Call the API to generate the PDF
-      const response = await fetch("/api/generate-report", {
+      const response = await fetch("/api/generate-call-report", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(reportData),
+        body: JSON.stringify(mockJson),
       });
 
       const result = await response.json();
@@ -91,7 +91,7 @@ export default function ReportPage() {
         throw new Error(result.error || "Failed to generate report");
       }
     } catch (error) {
-      console.error("Failed to generate report:", error);
+      // console.error("Failed to generate report:", error);
       setError("Unable to generate patient report. Please try again.");
     } finally {
       setIsGenerating(false);
@@ -115,7 +115,7 @@ export default function ReportPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Download failed:", error);
+      // console.error("Download failed:", error);
     }
   };
 
