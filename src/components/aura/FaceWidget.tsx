@@ -284,7 +284,7 @@ export function FaceWidgets({ onCalibrate, customVideoElement }: FaceWidgetsProp
     const socket = socketRef.current;
 
     if (!socket) {
-      console.error("No socket found");
+      console.log("No socket found");
       return;
     }
 
