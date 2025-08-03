@@ -311,6 +311,18 @@ const VideoCallPage = () => {
         setCallState((prev) => {
           const newParticipants = new Map(prev.remoteParticipants);
           newParticipants.delete(participant.sid);
+
+          // If no more remote participants, show call ended state
+          if (newParticipants.size === 0) {
+            toast.info("Other participant has left the call");
+            // Keep connected as false to show call ended state
+            return {
+              ...prev,
+              remoteParticipants: newParticipants,
+              isConnected: false,
+            };
+          }
+
           return { ...prev, remoteParticipants: newParticipants };
         });
 
@@ -425,21 +437,7 @@ const VideoCallPage = () => {
       callState.room.disconnect();
     }
 
-    // Check if this is the doctor (room creator) and route to reports page
-    if (callState.isCreatingRoom) {
-      toast.success("Call ended. Redirecting to reports...");
-      // Small delay to show the toast before redirecting
-      setTimeout(() => {
-        router.push("/report");
-      }, 1500);
-      return;
-    }
-
-    // For patients, stay on the video call page and show call ended state
-    // Update URL to remove room parameter when call ends
-    const newUrl = `${window.location.origin}/video-call`;
-    window.history.pushState({}, "", newUrl);
-
+    // Always show call ended screen first, regardless of user type
     setCallState((prev) => ({
       ...prev,
       isConnected: false,
@@ -447,16 +445,9 @@ const VideoCallPage = () => {
       localParticipant: null,
       remoteParticipants: new Map(),
       isJoining: false,
-      currentStep: "initial",
-      roomName: "",
-      participantName: "",
-      audioPermission: "pending",
-      videoPermission: "pending",
+      // Keep currentStep as "call" to show call ended state
+      // Keep other properties like isCreatingRoom to differentiate UI
     }));
-
-    // Reset local state
-    setLocalRoomName("");
-    setParticipantName("");
 
     toast.success("Call ended");
   };
@@ -817,9 +808,9 @@ const VideoCallPage = () => {
   // Show setup interface (Google Meet-style)
   if (callState.currentStep === "setup") {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col">
+      <div className="h-screen bg-slate-900 flex flex-col overflow-hidden">
         {/* Simple Header */}
-        <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-700">
+        <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-700 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
               <Heart className="w-4 h-4 text-white" />
@@ -838,13 +829,13 @@ const VideoCallPage = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-6xl">
-            <div className="grid lg:grid-cols-2 gap-8 items-center">
+        <div className="flex-1 flex items-center justify-center px-4 py-4 min-h-0">
+          <div className="w-full max-w-5xl h-full max-h-full">
+            <div className="grid lg:grid-cols-2 gap-6 items-center h-full">
               {/* Left Side - Video Preview */}
-              <div className="flex flex-col items-center">
-                <div className="relative inline-block mb-6">
-                  <div className="relative rounded-3xl overflow-hidden bg-slate-800 border border-slate-700 shadow-2xl" style={{ width: '480px', height: '270px' }}>
+              <div className="flex flex-col items-center justify-center">
+                <div className="relative inline-block mb-4">
+                  <div className="relative rounded-3xl overflow-hidden bg-slate-800 border border-slate-700 shadow-2xl w-full max-w-md aspect-video">
                     {callState.videoPermission === "granted" ? (
                       <>
                         <video
@@ -853,15 +844,17 @@ const VideoCallPage = () => {
                           playsInline
                           muted
                           className="w-full h-full object-cover"
-                          style={{ transform: 'scaleX(-1)' }}
+                          style={{ transform: "scaleX(-1)" }}
                         />
                         {!callState.isVideoOn && (
                           <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
                             <div className="text-center text-white">
-                              <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <VideoOff className="w-10 h-10 text-slate-400" />
+                              <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <VideoOff className="w-8 h-8 text-slate-400" />
                               </div>
-                              <p className="text-lg font-medium text-slate-300">Camera is off</p>
+                              <p className="text-base font-medium text-slate-300">
+                                Camera is off
+                              </p>
                             </div>
                           </div>
                         )}
@@ -869,40 +862,48 @@ const VideoCallPage = () => {
                     ) : callState.videoPermission === "denied" ? (
                       <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
                         <div className="text-center text-white">
-                          <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <VideoOff className="w-10 h-10 text-slate-400" />
+                          <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <VideoOff className="w-8 h-8 text-slate-400" />
                           </div>
-                          <p className="text-lg font-medium text-slate-300">Camera blocked</p>
-                          <p className="text-sm text-slate-400 mt-1">Allow camera access to continue</p>
+                          <p className="text-base font-medium text-slate-300">
+                            Camera blocked
+                          </p>
+                          <p className="text-sm text-slate-400 mt-1">
+                            Allow camera access to continue
+                          </p>
                         </div>
                       </div>
                     ) : (
                       <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
                         <div className="text-center text-white">
-                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-600 border-t-blue-500 mx-auto mb-4"></div>
-                          <p className="text-lg font-medium text-slate-300">Getting ready...</p>
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-600 border-t-blue-500 mx-auto mb-3"></div>
+                          <p className="text-base font-medium text-slate-300">
+                            Getting ready...
+                          </p>
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Controls overlay at bottom of video */}
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
+                  <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
                     <Button
                       onClick={toggleMute}
                       size="sm"
                       variant="ghost"
-                      className={`rounded-full w-12 h-12 ${
-                        callState.isMuted || callState.audioPermission === "denied"
+                      className={`rounded-full w-10 h-10 ${
+                        callState.isMuted ||
+                        callState.audioPermission === "denied"
                           ? "bg-red-600 hover:bg-red-700 text-white"
                           : "bg-slate-700 hover:bg-slate-600 text-white"
                       }`}
                       disabled={callState.audioPermission === "denied"}
                     >
-                      {callState.isMuted || callState.audioPermission === "denied" ? (
-                        <MicOff className="w-5 h-5" />
+                      {callState.isMuted ||
+                      callState.audioPermission === "denied" ? (
+                        <MicOff className="w-4 h-4" />
                       ) : (
-                        <Mic className="w-5 h-5" />
+                        <Mic className="w-4 h-4" />
                       )}
                     </Button>
 
@@ -910,64 +911,81 @@ const VideoCallPage = () => {
                       onClick={toggleVideo}
                       size="sm"
                       variant="ghost"
-                      className={`rounded-full w-12 h-12 ${
-                        !callState.isVideoOn || callState.videoPermission === "denied"
+                      className={`rounded-full w-10 h-10 ${
+                        !callState.isVideoOn ||
+                        callState.videoPermission === "denied"
                           ? "bg-red-600 hover:bg-red-700 text-white"
                           : "bg-slate-700 hover:bg-slate-600 text-white"
                       }`}
                       disabled={callState.videoPermission === "denied"}
                     >
-                      {callState.isVideoOn && callState.videoPermission === "granted" ? (
-                        <Video className="w-5 h-5" />
+                      {callState.isVideoOn &&
+                      callState.videoPermission === "granted" ? (
+                        <Video className="w-4 h-4" />
                       ) : (
-                        <VideoOff className="w-5 h-5" />
+                        <VideoOff className="w-4 h-4" />
                       )}
                     </Button>
                   </div>
                 </div>
 
                 {/* Device Status */}
-                <div className="flex items-center justify-center space-x-8 text-sm">
+                <div className="flex items-center justify-center space-x-6 text-sm">
                   <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      callState.audioPermission === "granted" ? "bg-green-500" :
-                      callState.audioPermission === "denied" ? "bg-red-500" : "bg-yellow-500"
-                    }`}></div>
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        callState.audioPermission === "granted"
+                          ? "bg-green-500"
+                          : callState.audioPermission === "denied"
+                          ? "bg-red-500"
+                          : "bg-yellow-500"
+                      }`}
+                    ></div>
                     <span className="text-slate-300">
-                      {callState.audioPermission === "granted" ? "Mic ready" :
-                       callState.audioPermission === "denied" ? "Mic blocked" : "Getting mic..."}
+                      {callState.audioPermission === "granted"
+                        ? "Mic ready"
+                        : callState.audioPermission === "denied"
+                        ? "Mic blocked"
+                        : "Getting mic..."}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      callState.videoPermission === "granted" ? "bg-green-500" :
-                      callState.videoPermission === "denied" ? "bg-red-500" : "bg-yellow-500"
-                    }`}></div>
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        callState.videoPermission === "granted"
+                          ? "bg-green-500"
+                          : callState.videoPermission === "denied"
+                          ? "bg-red-500"
+                          : "bg-yellow-500"
+                      }`}
+                    ></div>
                     <span className="text-slate-300">
-                      {callState.videoPermission === "granted" ? "Camera ready" :
-                       callState.videoPermission === "denied" ? "Camera blocked" : "Getting camera..."}
+                      {callState.videoPermission === "granted"
+                        ? "Camera ready"
+                        : callState.videoPermission === "denied"
+                        ? "Camera blocked"
+                        : "Getting camera..."}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Right Side - Ready to Join */}
-              <div className="bg-white rounded-2xl p-8 shadow-2xl" style={{ minHeight: '400px' }}>
-                <div className="h-full flex flex-col justify-center">
-                  <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900 mb-3">
+              <div className="bg-white rounded-2xl p-6 shadow-2xl flex flex-col justify-center">
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h1 className="text-2xl font-bold text-slate-900 mb-2">
                       Ready to join?
                     </h1>
-                    <p className="text-slate-600 text-lg">
-                      {callState.isCreatingRoom 
+                    <p className="text-slate-600 text-base">
+                      {callState.isCreatingRoom
                         ? "You're about to create and join a new meeting"
-                        : "You're about to join this meeting"
-                      }
+                        : "You're about to join this meeting"}
                     </p>
                   </div>
 
                   {/* Name Input */}
-                  <div className="mb-8">
+                  <div>
                     <Input
                       value={callState.participantName || participantName}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -978,17 +996,19 @@ const VideoCallPage = () => {
                         }));
                       }}
                       placeholder="Your name"
-                      className="h-14 text-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg"
+                      className="h-12 text-base border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-lg"
                     />
                   </div>
 
                   {/* Room Info for Created Rooms */}
                   {callState.isCreatingRoom && (
-                    <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <p className="text-sm text-blue-700 mb-1">Room ID</p>
-                          <p className="font-mono text-sm text-blue-900 truncate">{callState.roomName}</p>
+                          <p className="text-xs text-blue-700 mb-1">Room ID</p>
+                          <p className="font-mono text-sm text-blue-900 truncate">
+                            {callState.roomName}
+                          </p>
                         </div>
                         <Button
                           onClick={copyRoomLink}
@@ -996,7 +1016,7 @@ const VideoCallPage = () => {
                           variant="ghost"
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex-shrink-0 ml-2"
                         >
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
@@ -1007,25 +1027,31 @@ const VideoCallPage = () => {
                     onClick={handleJoinFromSetup}
                     disabled={
                       !callState.participantName.trim() ||
-                      (callState.audioPermission === "denied" && callState.videoPermission === "denied")
+                      (callState.audioPermission === "denied" &&
+                        callState.videoPermission === "denied")
                     }
-                    className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {callState.isCreatingRoom ? "Create & Join" : "Join now"}
                   </Button>
 
                   {/* Permission Warning */}
-                  {callState.audioPermission === "denied" && callState.videoPermission === "denied" && (
-                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="flex items-start space-x-3">
-                        <Shield className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-red-700 text-sm font-medium">Camera and microphone blocked</p>
-                          <p className="text-red-600 text-xs mt-1">Please allow access to join the meeting</p>
+                  {callState.audioPermission === "denied" &&
+                    callState.videoPermission === "denied" && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <Shield className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-red-700 text-sm font-medium">
+                              Camera and microphone blocked
+                            </p>
+                            <p className="text-red-600 text-xs mt-1">
+                              Please allow access to join the meeting
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             </div>
@@ -1081,38 +1107,173 @@ const VideoCallPage = () => {
     !callState.isJoining
   ) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
-            <PhoneOff className="w-10 h-10 text-white" />
+      <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700 flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            <span className="text-white font-medium text-sm">Call Ended</span>
           </div>
-          <h2 className="text-3xl font-bold text-white mb-4">Call Ended</h2>
-          <p className="text-blue-100 text-lg mb-8">
-            The video consultation has been terminated. Thank you for using
-            AuraHealth.
-          </p>
-          <Button
-            onClick={() => {
-              // Reset to initial state and clear URL
-              const newUrl = `${window.location.origin}/video-call`;
-              window.history.pushState({}, "", newUrl);
-              setCallState((prev) => ({
-                ...prev,
-                currentStep: "initial",
-                roomName: "",
-                participantName: "",
-                audioPermission: "pending",
-                videoPermission: "pending",
-                isCreatingRoom: false,
-              }));
-              setLocalRoomName("");
-              setParticipantName("");
-            }}
-            className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            <Play className="w-5 h-5 mr-2" />
-            Start New Call
-          </Button>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Heart className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-white font-medium text-sm">AuraHealth</span>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex items-center justify-center bg-gray-900 p-6">
+          <div className="text-center max-w-lg mx-auto">
+            {/* Call Ended Icon */}
+            <div className="relative mb-8">
+              <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
+                <PhoneOff className="w-12 h-12 text-white" />
+              </div>
+              <div className="absolute inset-0 w-24 h-24 bg-red-600 rounded-full opacity-20 animate-ping"></div>
+            </div>
+
+            {/* Title and Description */}
+            <h2 className="text-3xl font-bold text-white mb-4">
+              {callState.isCreatingRoom
+                ? "Consultation Complete"
+                : "Call Ended"}
+            </h2>
+
+            <p className="text-gray-300 text-lg mb-2">
+              {callState.isCreatingRoom
+                ? "The patient consultation has ended successfully."
+                : "The video consultation has been terminated."}
+            </p>
+
+            <p className="text-gray-400 text-base mb-8">
+              {callState.isCreatingRoom
+                ? "Patient data has been analyzed and is ready for review."
+                : "Thank you for using AuraHealth for your consultation."}
+            </p>
+
+            {/* Call Statistics */}
+            <div className="bg-gray-800 rounded-xl p-6 mb-8 border border-gray-700">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400 mb-1">
+                    {formatDuration(callState.callDuration)}
+                  </div>
+                  <div className="text-gray-400 text-sm">Call Duration</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400 mb-1">
+                    {callState.remoteParticipants.size + 1}
+                  </div>
+                  <div className="text-gray-400 text-sm">Participants</div>
+                </div>
+              </div>
+
+              {callState.isCreatingRoom && isRecording && (
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <div className="flex items-center justify-center space-x-2 text-green-400">
+                    <Brain className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      AI Analysis Completed
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-4">
+              {callState.isCreatingRoom ? (
+                // Doctor/Healthcare Provider Options
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => {
+                      toast.success("Redirecting to patient report...");
+                      setTimeout(() => {
+                        router.push("/report");
+                      }, 1000);
+                    }}
+                    className="w-full h-14 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Brain className="w-5 h-5 mr-3" />
+                    View Patient Report
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      // Reset to initial state and clear URL
+                      const newUrl = `${window.location.origin}/video-call`;
+                      window.history.pushState({}, "", newUrl);
+                      setCallState((prev) => ({
+                        ...prev,
+                        currentStep: "initial",
+                        roomName: "",
+                        participantName: "",
+                        audioPermission: "pending",
+                        videoPermission: "pending",
+                        isCreatingRoom: false,
+                        callDuration: 0,
+                      }));
+                      setLocalRoomName("");
+                      setParticipantName("");
+                    }}
+                    variant="outline"
+                    className="w-full h-12 border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 hover:border-gray-500 font-medium rounded-lg transition-all duration-200"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Start New Consultation
+                  </Button>
+                </div>
+              ) : (
+                // Patient Options
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => {
+                      // Reset to initial state and clear URL
+                      const newUrl = `${window.location.origin}/video-call`;
+                      window.history.pushState({}, "", newUrl);
+                      setCallState((prev) => ({
+                        ...prev,
+                        currentStep: "initial",
+                        roomName: "",
+                        participantName: "",
+                        audioPermission: "pending",
+                        videoPermission: "pending",
+                        isCreatingRoom: false,
+                        callDuration: 0,
+                      }));
+                      setLocalRoomName("");
+                      setParticipantName("");
+                    }}
+                    className="w-full h-14 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-3" />
+                    Return to Home
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      window.location.href = "/";
+                    }}
+                    variant="outline"
+                    className="w-full h-12 border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 hover:border-gray-500 font-medium rounded-lg transition-all duration-200"
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Back to Dashboard
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Message */}
+            <div className="mt-8 text-center">
+              <p className="text-gray-500 text-sm">
+                {callState.isCreatingRoom
+                  ? "Patient consultation data has been securely processed and stored."
+                  : "Your consultation session has ended. We hope AuraHealth was helpful."}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1121,17 +1282,29 @@ const VideoCallPage = () => {
   // Show video call interface
   if (callState.currentStep === "call" && callState.isConnected) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="h-screen bg-gray-900 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700 flex-shrink-0">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-white font-medium text-sm">AuraHealth Meeting</span>
+              <span className="text-white font-medium text-sm">
+                AuraHealth Meeting
+              </span>
             </div>
             <div className="hidden md:flex items-center space-x-4 text-gray-300 text-xs">
-              <span>Meeting ID: <span className="font-mono text-gray-200">{callState.roomName}</span></span>
-              <span>Duration: <span className="text-green-400">{formatDuration(callState.callDuration)}</span></span>
+              <span>
+                Meeting ID:{" "}
+                <span className="font-mono text-gray-200">
+                  {callState.roomName}
+                </span>
+              </span>
+              <span>
+                Duration:{" "}
+                <span className="text-green-400">
+                  {formatDuration(callState.callDuration)}
+                </span>
+              </span>
               {isRecording && (
                 <div className="flex items-center space-x-1 text-red-400">
                   <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
@@ -1144,30 +1317,30 @@ const VideoCallPage = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
+              className="text-gray-300 hover:text-white hover:bg-gray-700 h-7 w-7 p-0"
               onClick={copyRoomLink}
             >
-              <Share className="w-4 h-4" />
+              <Share className="w-3 h-3" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
+              className="text-gray-300 hover:text-white hover:bg-gray-700 h-7 w-7 p-0"
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-3 h-3" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="text-gray-300 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
+              className="text-gray-300 hover:text-white hover:bg-gray-700 h-7 w-7 p-0"
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-3 h-3" />
             </Button>
           </div>
         </div>
 
         {/* Main Video Area */}
-        <div className="flex-1 bg-gray-900 p-4">
+        <div className="flex-1 bg-gray-900 p-3 min-h-0">
           <div className="h-full relative">
             {/* Main Video Container */}
             <div className="relative w-full h-full bg-black rounded-lg overflow-hidden shadow-2xl">
@@ -1180,15 +1353,15 @@ const VideoCallPage = () => {
               />
 
               {/* Participant Name Overlay */}
-              <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm font-medium">
-                {callState.remoteParticipants.size > 0 
-                  ? Array.from(callState.remoteParticipants.values())[0]?.identity || "Participant"
-                  : "Waiting for participant..."
-                }
+              <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-sm font-medium">
+                {callState.remoteParticipants.size > 0
+                  ? Array.from(callState.remoteParticipants.values())[0]
+                      ?.identity || "Participant"
+                  : "Waiting for participant..."}
               </div>
 
               {/* Network Quality Indicator */}
-              <div className="absolute top-4 left-4 flex items-center space-x-2">
+              <div className="absolute top-3 left-3 flex items-center space-x-2">
                 <div className="bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center space-x-1">
                   <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
                   <span>HD</span>
@@ -1196,7 +1369,7 @@ const VideoCallPage = () => {
               </div>
 
               {/* Local Video (Picture-in-Picture) */}
-              <div className="absolute top-4 right-4 w-48 h-32 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600 shadow-lg">
+              <div className="absolute top-3 right-3 w-40 h-24 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-600 shadow-lg">
                 {callState.videoPermission === "granted" ? (
                   <>
                     <video
@@ -1205,12 +1378,12 @@ const VideoCallPage = () => {
                       playsInline
                       muted
                       className="w-full h-full object-cover"
-                      style={{ transform: 'scaleX(-1)' }}
+                      style={{ transform: "scaleX(-1)" }}
                     />
                     {!callState.isVideoOn && (
                       <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
                         <div className="text-center text-white">
-                          <VideoOff className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                          <VideoOff className="w-6 h-6 text-gray-400 mx-auto mb-1" />
                           <p className="text-xs">Camera off</p>
                         </div>
                       </div>
@@ -1219,14 +1392,14 @@ const VideoCallPage = () => {
                 ) : (
                   <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
                     <div className="text-center text-white">
-                      <VideoOff className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                      <VideoOff className="w-6 h-6 text-gray-400 mx-auto mb-1" />
                       <p className="text-xs">No camera</p>
                     </div>
                   </div>
                 )}
-                
+
                 {/* Local participant name */}
-                <div className="absolute bottom-1 left-1 bg-black/70 text-white px-2 py-0.5 rounded text-xs">
+                <div className="absolute bottom-1 left-1 bg-black/70 text-white px-1 py-0.5 rounded text-xs">
                   You
                 </div>
               </div>
@@ -1235,9 +1408,11 @@ const VideoCallPage = () => {
               {callState.isCreatingRoom &&
                 remoteVideoRef.current &&
                 remoteVideoRef.current.srcObject && (
-                  <div className="absolute bottom-4 right-4 max-w-xs">
-                    <div className="bg-black/80 backdrop-blur-sm rounded-lg p-3 border border-gray-600">
-                      <div className="text-white text-xs mb-2 font-medium">Patient Analysis</div>
+                  <div className="absolute bottom-3 right-3 max-w-xs">
+                    <div className="bg-black/80 backdrop-blur-sm rounded-lg p-2 border border-gray-600">
+                      <div className="text-white text-xs mb-1 font-medium">
+                        Patient Analysis
+                      </div>
                       {remoteVideoRef && remoteVideoRef.current && (
                         <FaceWidgets
                           customVideoElement={remoteVideoRef.current}
@@ -1251,17 +1426,26 @@ const VideoCallPage = () => {
               {callState.remoteParticipants.size === 0 && (
                 <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
                   <div className="text-center text-white">
-                    <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users className="w-12 h-12 text-gray-400" />
+                    <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Users className="w-10 h-10 text-gray-400" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">Waiting for others to join</h3>
-                    <p className="text-gray-400 max-w-sm mx-auto">
-                      Your meeting is ready. Share the meeting ID with participants.
+                    <h3 className="text-lg font-semibold mb-2">
+                      Waiting for others to join
+                    </h3>
+                    <p className="text-gray-400 max-w-sm mx-auto text-sm">
+                      Your meeting is ready. Share the meeting ID with
+                      participants.
                     </p>
-                    <div className="mt-4 flex items-center justify-center space-x-1">
+                    <div className="mt-3 flex items-center justify-center space-x-1">
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: "0.3s" }}></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: "0.6s" }}></div>
+                      <div
+                        className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                        style={{ animationDelay: "0.3s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                        style={{ animationDelay: "0.6s" }}
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -1271,13 +1455,13 @@ const VideoCallPage = () => {
         </div>
 
         {/* Control Bar */}
-        <div className="bg-gray-800 px-6 py-4 border-t border-gray-700">
-          <div className="flex items-center justify-center space-x-4">
+        <div className="bg-gray-800 px-4 py-3 border-t border-gray-700 flex-shrink-0">
+          <div className="flex items-center justify-center space-x-3">
             {/* Mute Button */}
             <Button
               onClick={toggleMute}
               size="sm"
-              className={`rounded-full w-12 h-12 transition-all duration-200 ${
+              className={`rounded-full w-10 h-10 transition-all duration-200 ${
                 callState.isMuted || callState.audioPermission === "denied"
                   ? "bg-red-600 hover:bg-red-700 text-white"
                   : "bg-gray-600 hover:bg-gray-500 text-white"
@@ -1285,9 +1469,9 @@ const VideoCallPage = () => {
               disabled={callState.audioPermission === "denied"}
             >
               {callState.isMuted || callState.audioPermission === "denied" ? (
-                <MicOff className="w-5 h-5" />
+                <MicOff className="w-4 h-4" />
               ) : (
-                <Mic className="w-5 h-5" />
+                <Mic className="w-4 h-4" />
               )}
             </Button>
 
@@ -1295,66 +1479,67 @@ const VideoCallPage = () => {
             <Button
               onClick={toggleVideo}
               size="sm"
-              className={`rounded-full w-12 h-12 transition-all duration-200 ${
+              className={`rounded-full w-10 h-10 transition-all duration-200 ${
                 !callState.isVideoOn || callState.videoPermission === "denied"
                   ? "bg-red-600 hover:bg-red-700 text-white"
                   : "bg-gray-600 hover:bg-gray-500 text-white"
               }`}
               disabled={callState.videoPermission === "denied"}
             >
-              {callState.isVideoOn && callState.videoPermission === "granted" ? (
-                <Video className="w-5 h-5" />
+              {callState.isVideoOn &&
+              callState.videoPermission === "granted" ? (
+                <Video className="w-4 h-4" />
               ) : (
-                <VideoOff className="w-5 h-5" />
+                <VideoOff className="w-4 h-4" />
               )}
             </Button>
 
             {/* Share Screen Button */}
             <Button
               size="sm"
-              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+              className="rounded-full w-10 h-10 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
             >
-              <Share className="w-5 h-5" />
+              <Share className="w-4 h-4" />
             </Button>
 
             {/* Participants Button */}
             <Button
               size="sm"
-              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+              className="rounded-full w-10 h-10 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
             >
-              <Users className="w-5 h-5" />
+              <Users className="w-4 h-4" />
             </Button>
 
             {/* Chat Button */}
             <Button
               size="sm"
-              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+              className="rounded-full w-10 h-10 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
             >
-              <MessageSquare className="w-5 h-5" />
+              <MessageSquare className="w-4 h-4" />
             </Button>
 
             {/* Settings Button */}
             <Button
               size="sm"
-              className="rounded-full w-12 h-12 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
+              className="rounded-full w-10 h-10 bg-gray-600 hover:bg-gray-500 text-white transition-all duration-200"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-4 h-4" />
             </Button>
 
             {/* End Call Button */}
             <Button
               onClick={endCall}
               size="sm"
-              className="rounded-full w-14 h-12 bg-red-600 hover:bg-red-700 text-white transition-all duration-200 ml-4"
+              className="rounded-full w-12 h-10 bg-red-600 hover:bg-red-700 text-white transition-all duration-200 ml-2"
             >
-              <PhoneOff className="w-5 h-5" />
+              <PhoneOff className="w-4 h-4" />
             </Button>
           </div>
 
           {/* Additional Controls Row */}
-          <div className="flex items-center justify-center mt-3 space-x-6 text-xs text-gray-400">
+          <div className="flex items-center justify-center mt-2 space-x-4 text-xs text-gray-400">
             <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
               <span>Connection: Stable</span>
             </div>
             <div className="flex items-center space-x-1">
