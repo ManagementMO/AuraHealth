@@ -14,9 +14,16 @@ let cachedConnection: MongoConnection | null = null;
  * @returns Promise<MongoConnection> - Cached or new MongoDB connection
  */
 export async function connectToDatabase(): Promise<MongoConnection> {
-  // Return cached connection if it exists and is still connected
-  if (cachedConnection && cachedConnection.client.topology?.isConnected()) {
-    return cachedConnection;
+  // Return cached connection if it exists
+  if (cachedConnection) {
+    try {
+      // Ping the database to verify connection is still active
+      await cachedConnection.db.admin().ping();
+      return cachedConnection;
+    } catch {
+      console.log('Cached connection is stale, creating new connection');
+      cachedConnection = null;
+    }
   }
 
   // Validate environment variable
@@ -32,8 +39,6 @@ export async function connectToDatabase(): Promise<MongoConnection> {
       maxPoolSize: 10, // Maintain up to 10 socket connections
       serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      bufferMaxEntries: 0, // Disable mongoose buffering
-      bufferCommands: false, // Disable mongoose buffering
     });
 
     // Connect to MongoDB
@@ -76,8 +81,17 @@ export async function closeDatabaseConnection(): Promise<void> {
 
 /**
  * Gets the current database connection status
- * @returns boolean - True if connected, false otherwise
+ * @returns Promise<boolean> - True if connected, false otherwise
  */
-export function isDatabaseConnected(): boolean {
-  return cachedConnection?.client.topology?.isConnected() ?? false;
+export async function isDatabaseConnected(): Promise<boolean> {
+  if (!cachedConnection) {
+    return false;
+  }
+  
+  try {
+    await cachedConnection.db.admin().ping();
+    return true;
+  } catch {
+    return false;
+  }
 }
