@@ -40,6 +40,7 @@ export default function PracticeSession({ accessToken }: { accessToken: string }
   const [generatingReport, setGeneratingReport] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const sessionStartTime = useRef<Date | null>(null);
+  const emotionDataRef = useRef<Record<string, number>>({});
 
   // Timer effect for practice session
   useEffect(() => {
@@ -93,6 +94,10 @@ export default function PracticeSession({ accessToken }: { accessToken: string }
     toast.info("Session ended. Generating your practice report...");
   };
 
+  const onEmotionDataUpdate = (emotionData: Record<string, number>) => {
+    emotionDataRef.current = emotionData;
+  };
+
   const generateReport = async () => {
     setGeneratingReport(true);
     try {
@@ -105,6 +110,7 @@ export default function PracticeSession({ accessToken }: { accessToken: string }
           sessionStart: sessionStartTime.current,
           sessionEnd: new Date(),
           accessToken,
+          emotionData: emotionDataRef.current,
         }),
       });
 
@@ -126,32 +132,71 @@ export default function PracticeSession({ accessToken }: { accessToken: string }
     }
   };
 
-  const getMockReport = (): SentimentReport => ({
-    overallSentiment: "Positive and Engaged",
-    emotionalTone: "Calm with slight nervousness",
-    confidenceLevel: 78,
-    keyInsights: [
-      "You maintained good eye contact throughout the session",
-      "Your voice remained steady and clear",
-      "You asked thoughtful questions about your health"
-    ],
-    improvementTips: [
-      "Try to speak a bit slower to convey more confidence",
-      "Practice deep breathing before important conversations",
-      "Consider preparing key questions in advance"
-    ],
-    praisedAspects: [
-      "Excellent communication clarity",
-      "Good emotional regulation",
-      "Active listening demonstrated"
-    ],
-    emotionBreakdown: {
-      "Calm": 45,
-      "Confident": 25,
-      "Nervous": 15,
-      "Engaged": 15
+  const getMockReport = (): SentimentReport => {
+    // Use real emotion data if available as fallback
+    const realEmotions = emotionDataRef.current;
+    
+    if (realEmotions && Object.keys(realEmotions).length > 0) {
+      console.log("Using real emotion data for fallback report:", realEmotions);
+      
+      // Convert to percentages for display
+      const total = Object.values(realEmotions).reduce((sum, val) => sum + val, 0);
+      const emotionBreakdown: Record<string, number> = {};
+      Object.entries(realEmotions).forEach(([emotion, value]) => {
+        emotionBreakdown[emotion] = Math.round((value / total) * 100);
+      });
+
+      return {
+        overallSentiment: "Session Analyzed",
+        emotionalTone: "Based on your conversation patterns",
+        confidenceLevel: 75,
+        keyInsights: [
+          "Your emotions were captured during the practice session",
+          "The conversation provided valuable data for analysis",
+          "You engaged with the AI companion effectively"
+        ],
+        improvementTips: [
+          "Continue practicing to build confidence",
+          "Focus on clear communication",
+          "Prepare questions for your actual appointment"
+        ],
+        praisedAspects: [
+          "You completed the practice session",
+          "You engaged with the conversation",
+          "You're taking proactive steps for your health"
+        ],
+        emotionBreakdown
+      };
     }
-  });
+
+    // Fallback to static mock data if no real data available
+    return {
+      overallSentiment: "Practice Session Completed",
+      emotionalTone: "General feedback",
+      confidenceLevel: 70,
+      keyInsights: [
+        "You took initiative to practice before your appointment",
+        "Practice sessions help build confidence",
+        "Regular practice improves communication skills"
+      ],
+      improvementTips: [
+        "Try to speak clearly and at a measured pace",
+        "Practice deep breathing before important conversations",
+        "Consider preparing key questions in advance"
+      ],
+      praisedAspects: [
+        "You completed the full practice session",
+        "You're being proactive about your healthcare",
+        "You're building good communication habits"
+      ],
+      emotionBreakdown: {
+        "Engaged": 40,
+        "Calm": 30,
+        "Confident": 20,
+        "Thoughtful": 10
+      }
+    };
+  };
 
   const restartSession = () => {
     // Clear any existing timer
@@ -241,7 +286,11 @@ export default function PracticeSession({ accessToken }: { accessToken: string }
 
         {/* Chat Component */}
         <div className="pt-20">
-          <Chat accessToken={accessToken} onCallConnected={onCallConnected} />
+          <Chat 
+            accessToken={accessToken} 
+            onCallConnected={onCallConnected} 
+            onEmotionDataUpdate={onEmotionDataUpdate}
+          />
         </div>
       </div>
     );
@@ -277,7 +326,12 @@ export default function PracticeSession({ accessToken }: { accessToken: string }
 
         {/* Chat Component */}
         <div className="flex flex-col min-h-screen pt-30">
-          <Chat accessToken={accessToken} onCallConnected={onCallConnected} onSessionEnd={onSessionEnd} />
+          <Chat 
+            accessToken={accessToken} 
+            onCallConnected={onCallConnected} 
+            onSessionEnd={onSessionEnd}
+            onEmotionDataUpdate={onEmotionDataUpdate}
+          />
         </div>
       </div>
     );
