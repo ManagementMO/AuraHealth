@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, RefObject } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Mic,
@@ -40,8 +40,8 @@ import {
   RemoteTrack,
 } from "twilio-video";
 
-// // Hume Sentiment Analyzer
-// import HumeSentimentAnalyzer from "@/lib/hume-sentiment-analyzer";
+// Face Analysis Widget
+import { FaceWidgets } from "@/components/aura/FaceWidget";
 
 interface CallState {
   isConnecting: boolean;
@@ -85,12 +85,11 @@ const VideoCallPage = () => {
 
   const [localRoomName, setLocalRoomName] = useState(roomNameFromUrl || "");
   const [participantName, setParticipantName] = useState("");
+  const [analysisVideoElement, setAnalysisVideoElement] = useState<HTMLVideoElement | null>(null);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const emotionDisplayRef = useRef<HTMLDivElement>(null);
-  // const sentimentAnalyzerRef = useRef<HumeSentimentAnalyzer | null>(null);
 
   // Request permissions separately to avoid crashes
   const requestAudioPermission = async () => {
@@ -202,12 +201,16 @@ const VideoCallPage = () => {
       room.localParticipant.videoTracks.forEach((publication) => {
         if (publication.track && localVideoRef.current) {
           publication.track.attach(localVideoRef.current);
+          console.log("Local video track attached");
         }
       });
 
       // Handle local track publications
       room.localParticipant.on("trackPublished", (publication) => {
         console.log("Local track published:", publication.trackName);
+        if (publication.track && publication.track.kind === "video" && localVideoRef.current) {
+          publication.track.attach(localVideoRef.current);
+        }
       });
 
       room.localParticipant.on("trackUnpublished", (publication) => {
@@ -388,11 +391,8 @@ const VideoCallPage = () => {
   };
 
   const endCall = () => {
-    // // Stop sentiment analysis
-    // if (sentimentAnalyzerRef.current) {
-    //   sentimentAnalyzerRef.current.destroy();
-    //   sentimentAnalyzerRef.current = null;
-    // }
+    // Clean up analysis video element
+    setAnalysisVideoElement(null);
 
     if (callState.room) {
       callState.room.disconnect();
@@ -626,51 +626,7 @@ const VideoCallPage = () => {
     };
   }, [callState.room]);
 
-  // // Initialize sentiment analyzer when call starts
-  // useEffect(() => {
-  //   if (
-  //     callState.currentStep === "call" &&
-  //     callState.isConnected &&
-  //     callState.videoPermission === "granted" &&
-  //     callState.isCreatingRoom && // Only for healthcare provider
-  //     callState.remoteParticipants.size > 0 // Only when patient has joined
-  //   ) {
-  //     // Small delay to ensure video element is ready
-  //     const timer = setTimeout(() => {
-  //       initializeSentimentAnalyzer();
-  //     }, 1000);
 
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [
-  //   callState.currentStep,
-  //   callState.isConnected,
-  //   callState.videoPermission,
-  //   callState.isCreatingRoom,
-  //   callState.remoteParticipants.size,
-  // ]);
-
-  // // Reinitialize sentiment analyzer when remote participant joins (for healthcare provider)
-  // useEffect(() => {
-  //   if (
-  //     callState.isCreatingRoom && // Only for healthcare provider
-  //     callState.remoteParticipants.size > 0 && // Patient has joined
-  //     callState.currentStep === "call" &&
-  //     callState.isConnected
-  //   ) {
-  //     // Small delay to ensure remote video element is ready
-  //     const timer = setTimeout(() => {
-  //       // initializeSentimentAnalyzer();
-  //     }, 2000);
-
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [
-  //   callState.remoteParticipants.size,
-  //   callState.isCreatingRoom,
-  //   callState.currentStep,
-  //   callState.isConnected,
-  // ]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -678,44 +634,7 @@ const VideoCallPage = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // // Initialize sentiment analyzer when call starts (only for healthcare provider)
-  // const initializeSentimentAnalyzer = async () => {
-  //   // Only initialize for healthcare provider (caller)
-  //   if (!callState.isCreatingRoom) {
-  //     return;
-  //   }
 
-  //   // For healthcare provider, analyze the remote participant's video (patient)
-  //   const videoElement = remoteVideoRef.current;
-  //   if (!videoElement || !emotionDisplayRef.current) {
-  //     return;
-  //   }
-
-  //   try {
-  //     // Create new sentiment analyzer instance
-  //     sentimentAnalyzerRef.current = new HumeSentimentAnalyzer({
-  //       frameRate: 3, // 3 FPS
-  //       canvasWidth: 640,
-  //       canvasHeight: 480,
-  //       maxEmotions: 3,
-  //     });
-
-  //     // Initialize the analyzer with remote video (patient's video)
-  //     await sentimentAnalyzerRef.current.initialize(
-  //       videoElement,
-  //       emotionDisplayRef.current
-  //     );
-
-  //     console.log(
-  //       "Sentiment analyzer initialized successfully for patient analysis"
-  //     );
-  //   } catch (error) {
-  //     console.error("Failed to initialize sentiment analyzer:", error);
-  //     toast.error("Sentiment analysis unavailable", {
-  //       description: "Unable to start facial emotion analysis.",
-  //     });
-  //   }
-  // };
 
   // Show initial interface
   if (callState.currentStep === "initial") {
@@ -1386,23 +1305,26 @@ const VideoCallPage = () => {
               </div>
             </div>
 
-            {/* Emotion Display - Only for Healthcare Provider */}
-            {callState.isCreatingRoom && (
-              <div className="absolute bottom-6 right-6">
-                <div
-                  ref={emotionDisplayRef}
-                  className="emotion-display-placeholder"
-                >
-                  <div className="emotion-container">
-                    <h3 className="emotion-title">
-                      Patient Sentiment Analysis
-                    </h3>
-                    <div className="text-center text-white/60 text-xs">
-                      <Brain className="w-4 h-4 mx-auto mb-1" />
-                      <p>Analyzing patient emotions...</p>
-                    </div>
-                  </div>
+            {/* Face Analysis Widget - Only for Healthcare Provider analyzing patient */}
+            {callState.isCreatingRoom && remoteVideoRef.current && remoteVideoRef.current.srcObject && (
+              <div className="absolute bottom-6 right-6 max-w-sm">
+                <div className="bg-black/40 backdrop-blur-md rounded-xl p-4 border border-white/10">
+                  {remoteVideoRef &&remoteVideoRef.current && (
+                    <FaceWidgets
+                      customVideoElement={remoteVideoRef.current}
+                    />
+                  )}
                 </div>
+              </div>
+            )}
+            
+            {/* Debug Info for Healthcare Provider */}
+            {callState.isCreatingRoom && (
+              <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-md rounded-lg p-2 text-xs text-white">
+                <div>Provider View (Analyzing Patient)</div>
+                <div>Remote Video: {remoteVideoRef.current ? '✅' : '❌'}</div>
+                <div>Stream: {(remoteVideoRef.current?.srcObject) ? '✅' : '❌'}</div>
+                <div>Widget: {(callState.isCreatingRoom && remoteVideoRef.current?.srcObject) ? '✅' : '❌'}</div>
               </div>
             )}
 

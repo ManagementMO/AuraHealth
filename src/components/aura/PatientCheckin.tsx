@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { VoiceProvider, useVoice } from "@humeai/voice-react";
 
 // TypeScript interfaces for component state and data
 interface EmotionDataPoint {
