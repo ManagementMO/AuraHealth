@@ -18,7 +18,8 @@ export async function GET(): Promise<Response> {
         { status: 500 }
       );
     }
-
+    console.log('apiKey', apiKey);
+    console.log('clientSecret', clientSecret);
     // Generate access token using Hume AI credentials
     // This follows Hume AI's authentication flow for generating short-lived tokens
     const tokenResponse = await fetch('https://api.hume.ai/oauth2-cc/token', {

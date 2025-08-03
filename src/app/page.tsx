@@ -614,9 +614,15 @@ export default function Home() {
                 <span className="block text-blue-600">Come First</span>
               </h2>
               <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+<<<<<<< HEAD
                 We understand that healthcare is personal. That`&apos;`s why we`&apos;`ve
                 built our platform with medical-grade security standards that
                 exceed industry requirements.
+=======
+                We understand that healthcare is personal. That&apos;s why
+                we&apos;ve built our platform with medical-grade security
+                standards that exceed industry requirements.
+>>>>>>> hume-stan
               </p>
 
               <div className="space-y-6">

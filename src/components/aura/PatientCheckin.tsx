@@ -197,7 +197,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
     }, 1000);
 
     toast.success("Recording started", {
-      description: "Please describe how you've been feeling.",
+      description: "Please describe how you&apos;ve been feeling.",
       duration: 3000,
     });
   };
@@ -367,7 +367,7 @@ export function PatientCheckin({}: PatientCheckinProps) {
                   </div>
                   <div className="text-red-600 text-sm mb-6 leading-relaxed">
                     {checkinState.webcamError.includes("denied") &&
-                      'Please click the camera icon in your browser\'s address bar and select "Allow", then refresh this page.'}
+                      'Please click the camera icon in your browser&apos;s address bar and select "Allow", then refresh this page.'}
                     {checkinState.webcamError.includes("found") &&
                       "Please connect a camera device and refresh the page to continue with your assessment."}
                     {!checkinState.webcamError.includes("denied") &&

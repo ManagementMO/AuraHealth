@@ -10,3 +10,7 @@ build
 out
 .idea
 .vscode
+.next
+
+test
+*.pdf
