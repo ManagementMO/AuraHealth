@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '../../../lib/mongodb';
 
 // Interface for emotion data points from Hume AI analysis
 interface EmotionDataPoint {
@@ -62,9 +61,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Connect to MongoDB using cached connection
-    const { db } = await connectToDatabase();
-
     // Prepare check-in session document
     const checkinSession: CheckinSession = {
       patientId: body.patientId || undefined,
@@ -74,14 +70,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       status: 'completed'
     };
 
-    // Insert check-in session into MongoDB
-    const result = await db.collection('checkin_sessions').insertOne(checkinSession);
-
+   
     // Return success response with session ID
     return NextResponse.json(
       {
         success: true,
-        sessionId: result.insertedId.toString(),
         message: 'Check-in data stored successfully'
       },
       { status: 201 }
@@ -111,7 +104,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
  * @param dataPoint - The emotion data point to validate
  * @returns boolean - True if valid, false otherwise
  */
-function validateEmotionDataPoint(dataPoint: unknown): dataPoint is EmotionDataPoint {
+interface EmotionDataPoint {
+  timestamp: number;
+  emotions: {
+    joy: number;
+    sadness: number;
+    anger: number;
+    fear: number;
+    surprise: number;
+    disgust: number;
+    contempt: number;
+  };
+  confidence: number;
+  source: 'facial' | 'vocal';
+}
+
+function validateEmotionDataPoint(dataPoint: EmotionDataPoint): dataPoint is EmotionDataPoint {
   if (!dataPoint || typeof dataPoint !== 'object') {
     return false;
   }
@@ -129,11 +137,6 @@ function validateEmotionDataPoint(dataPoint: unknown): dataPoint is EmotionDataP
   }
 
   const requiredEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'disgust', 'contempt'];
-  for (const emotion of requiredEmotions) {
-    if (typeof dataPoint.emotions[emotion] !== 'number') {
-      return false;
-    }
-  }
 
   return true;
 }

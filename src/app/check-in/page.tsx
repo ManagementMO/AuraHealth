@@ -86,7 +86,7 @@ export default function CheckInPage() {
             </h1>
 
             <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              Help us prepare for your appointment by sharing how you've been
+              Help us prepare for your appointment by sharing how you`&apos;`ve been
               feeling. This secure assessment enables your healthcare provider
               to deliver more personalized care.
             </p>
